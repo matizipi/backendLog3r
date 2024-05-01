@@ -9,3 +9,8 @@ app = Flask(__name__)
 def hello_world():
     return 'Hello from Flask!'
 
+@app.route('/prueba')
+def prueba():
+    return 'Testeando la ruta nueva...'
+
+
