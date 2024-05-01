@@ -11,5 +11,5 @@ def hello_world():
 
 @app.route('/prueba')
 def prueba():
-    return 'Esta vivo!'
+    return "<p>Testeando la ruta nueva...</p>"
 
