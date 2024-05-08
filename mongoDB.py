@@ -7,15 +7,15 @@ MONGO_PORT = 27017
 MONGO_DB = 'pp1_rf'
 
 # Crear una instancia de MongoClient
-client = MongoClient(MONGO_HOST, MONGO_PORT)
+#client = MongoClient(MONGO_HOST, MONGO_PORT)
 
 # Obtener una referencia a la base de datos
-db = client[MONGO_DB]
+#db = client[MONGO_DB]
 
 def searchMdb(label):
     # Realizar operaciones con la base de datos MongoDB
     # Por ejemplo, puedes obtener una colección y devolver algunos documentos
-    collection = db['usuarios']    
+    #collection = db['usuarios']
     result = []
     filtro = {"label": label}
     documento = collection.find_one(filtro, {"_id": 0,"label":0})
