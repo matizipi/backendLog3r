@@ -1,7 +1,3 @@
-
-# A very simple Flask Hello World app for you to get started with...
-
-
 import cv2.data
 from flask import Flask,jsonify,request
 import cv2 
@@ -18,6 +14,10 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     return 'home'
+  
+@app.route('/prueba')
+def prueba():
+    return 'Testeando la ruta nueva...'
 
 @app.route('/api/authentication', methods=['POST'])
 def predict():
@@ -43,12 +43,12 @@ def register():
 if __name__== "__main__":
     app.run(debug=True)
 
-
-
 # if (os.path.exists('modelo.xml')):
 #     # hacer algo si el archivo existe
 #     pass    
 # else:
 #     # entrenar el modelo por primera vez    
 #     training.train()
+
+
 
