@@ -3,6 +3,9 @@ import os
 import cv2.data
 import numpy as np
 import time
+import sys
+
+sys.stdout.flush()
 
 ##rutas al proyecto
 datapath = '/home/matizipi123/backendLog3r/data'
@@ -20,14 +23,13 @@ threshold = 85
 
 ##Para hacer el resize de las fotos
 def detectarRostro(image):
-    faces = faceClassifier.detectMultiScale(image, 1.3, 5)
-    if len(faces) == 0:
-        return None  # No se detectaron rostros
-
-    for (x, y, w, h) in faces:
-        rostro = image[y:y + h, x:x + w]
-        resized = cv2.resize(rostro, imageSize, interpolation=cv2.INTER_CUBIC)
-        return resized
+    face = faceClassifier.detectMultiScale(image, 1.3, 5)
+    if len(face) == 0:
+        return None  # No se detectó ningún rostro
+    else:
+        for (x, y, w, h) in face:
+            rostro = image[y:y+h, x:x+w]
+            return cv2.resize(rostro, imageSize, interpolation=cv2.INTER_CUBIC)
 
     return None  # Por si acaso
 
@@ -47,12 +49,10 @@ def train():
                 print(f"No se pudo cargar la imagen en la ruta {dirImagen}")
                 continue
             imageResize=detectarRostro(image)
-            if imageResize is not None:
-                continue
 
-            #Agrego Label y facedata
-            labels.append(label)
-            facesData.append(imageResize)
+            if imageResize is not None:
+                facesData.append(imageResize)
+                labels.append(label)
 
             #Muestro la imagen
             cv2.waitKey(10)

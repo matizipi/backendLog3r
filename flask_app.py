@@ -8,6 +8,8 @@ from training import detectarRostro, train
 from captureFace import captureFace
 from mongoDB import searchMdb
 
+os.environ['TMPDIR'] = '/home/matizipi123/backendLog3r/temporal'
+
 print("CV2 version"+str(cv2.__version__))
 
 ultimo_Label = 0
