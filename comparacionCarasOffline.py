@@ -20,18 +20,7 @@ imageSize=(150,150)
 
 vectoresLocales=[]
 labels=[]
-
-
-
-
- 
-
-
-
-
-    
-    
-    
+  
 def compararConDB(image_entrada):
     
     cursor=searchMdb()
