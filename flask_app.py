@@ -3,7 +3,7 @@ from flask import Flask,jsonify,request
 import cv2
 import numpy as np
 import os
-from training import detectarRostro
+from training import detectarRostro, train
 from captureFace import captureFace
 from mongoDB import searchMdb
 
@@ -43,12 +43,12 @@ def register():
 if __name__== "__main__":
     app.run(debug=True)
 
-# if (os.path.exists('modelo.xml')):
-#     # hacer algo si el archivo existe
-#     pass
-# else:
-#     # entrenar el modelo por primera vez
-#     training.train()
+if (os.path.exists('modelo.xml')):
+     # hacer algo si el archivo existe
+     pass
+else:
+     # entrenar el modelo por primera vez
+     train()
 
 
 
