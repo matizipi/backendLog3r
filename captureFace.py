@@ -20,14 +20,14 @@ def captureFace(VideoSrc):
     video_url = VideoSrc
 
     # Descargar el video desde Firebase Storage
-    video_data = storage.child(video_url+".mp4").download_as_string()  ''' 
+    video_data = storage.child(video_url+".mp4").download_as_string()  '''
 
     imageSize=(150,150)
     ruta_script = os.path.abspath(__file__)
-    ruta_proyecto = os.path.dirname(os.path.dirname(ruta_script)) 
+    ruta_proyecto = os.path.dirname(os.path.dirname(ruta_script))
     datapath = os.path.join(ruta_proyecto, 'data')
-    personName, extension = os.path.splitext(VideoSrc)  
-    personName=personName    
+    personName, extension = os.path.splitext(VideoSrc)
+    personName=personName
     personaPath=os.path.join(datapath,personName)
 
     if not os.path.exists(personaPath):
@@ -43,13 +43,13 @@ def captureFace(VideoSrc):
         image=cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
         faces=faceClassifier.detectMultiScale(frame,1.3,5)
         copyFrame=frame.copy()
-        
+
         for(x,y,w,h) in faces:
             rostro=copyFrame[y:y+h,x:x+w]
             rostro=cv2.resize(rostro,imageSize,interpolation=cv2.INTER_CUBIC)
             cv2.imwrite(personaPath+"/rostro_{}.jpg".format(count),rostro)
             count=count+1
         ###cv2.imshow("frame",frame)
-        
+
         k= cv2.waitKey(1)
         if k == 27 or count>=300:break

@@ -4,9 +4,7 @@ import cv2.data
 import numpy as np
 
 ##rutas al proyecto
-ruta_script = os.path.abspath(__file__)
-ruta_proyecto = os.path.dirname(os.path.dirname(ruta_script)) 
-datapath = os.path.join(ruta_proyecto, 'data')   
+datapath = '/home/matizipi123/backendLog3r/data'
 peopleList = os.listdir(datapath)
 peopleList.sort() # para que le ande a Gabi
 print("lista de personas: "+ str(peopleList))
@@ -24,7 +22,7 @@ def detectarRostro(image):
     for(x,y,w,h) in face:
         rostro=image[y:y+h,x:x+w]
         output=cv2.resize(rostro,imageSize,interpolation=cv2.INTER_CUBIC)
-    
+
     return output
 
 def train():
@@ -35,22 +33,22 @@ def train():
         personPaths = os.listdir(personPath)
         personPaths.sort()
         for fileName in personPaths:
-            
+
             #Direccion de imagen
             dirImagen=personPath+"/"+fileName
             image=cv2.imread(dirImagen,0)
             print("Rostro "+dirImagen)
-            #imageResize=detectarRostro(image)
-            
-            
+            imageResize=detectarRostro(image)
+
+
             #Agrego Label y facedata
             labels.append(label)
             facesData.append(image)
-            
+
             #Muestro la imagen
-            
-            # cv2.imshow("imagen",image)
-            # cv2.waitKey(10)
+
+            cv2.imshow("imagen",image)
+            cv2.waitKey(10)
         label=label+1
 
     print(labels)
@@ -63,6 +61,6 @@ def train():
     face_recognizer.write("modelo.xml")
     print("Modelo guardado.....")
     print(peopleList)
-    
+
 if __name__== "__main__":
     train()
