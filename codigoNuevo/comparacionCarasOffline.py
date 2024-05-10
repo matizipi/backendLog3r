@@ -6,15 +6,7 @@ import os
 import time
 import math
 ##Nivel local
-ruta_script = os.path.abspath(__file__)
-ruta_proyecto = os.path.dirname(os.path.dirname(ruta_script)) 
-datapath = os.path.join(ruta_proyecto, 'data')   
-peopleList = os.listdir(datapath)
 
-
-
-faceClassifier=cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml")
-prueba_path_entrada="D:/Facultad/AAAAAAFacultad/UNGS/Ano 2024/Cuatrimestre 1/Proyecto Profesional I/TP Final/flask-backend-log3r/rostrosParaTest/esteban.jpg"
 THRESHOLD=0.93
 imageSize=(150,150)
 
