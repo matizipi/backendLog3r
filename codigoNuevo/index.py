@@ -28,7 +28,7 @@ def predict():
     
     result=comparacionCarasOffline.compararConDB(image)
     if result ==-1:        
-        return jsonify({"message": "Autenticación fallida"})
+        return jsonify({"message": "Autenticación fallida"}),401
     
     result_serializable = json.loads(json_util.dumps(result))
     

@@ -25,6 +25,8 @@ labels=[]
     
     
 def compararConDB(image_entrada):
+    if(imagenSinRostros(image_entrada)):
+        return -1
     
     cursor=searchMdb()
     max_user_similitude=-1
@@ -69,6 +71,8 @@ def vectorizarImagen(imagen):
     
     #entrada=detectarRostro(cv2.imread(entrada))
     #entrada=cv2.imread(imagen)
+    cv2.imshow("a",imagen)
+    cv2.waitKey(10000)
     posrostro_entrada=face_recognition.face_locations(imagen)[0]
     
     
@@ -87,4 +91,9 @@ def vectorizarImagen(imagen):
     return vector_rostro_entrada
 
 
-
+def imagenSinRostros(imagen):
+    rostros=face_recognition.face_locations(imagen)
+    print(rostros)
+    if(len(rostros)==0):
+        return True
+    return False
