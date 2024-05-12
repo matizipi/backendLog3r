@@ -28,7 +28,7 @@ def predict():
     
     result=comparacionCarasOffline.compararConDB(image)
     if result ==-1:        
-        return jsonify({"message": "Autenticación fallida"}),401
+        return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
     print(result["rol"])
     result_serializable = json.loads(json_util.dumps(result))
     
@@ -42,7 +42,7 @@ def login():
     
     result=comparacionCarasOffline.compararConDB(image)
     if result ==-1:        
-        return jsonify({"message": "Autenticación fallida"}),401
+        return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
     
     if "seguridad" in result["rol"] or "recursos humanos" in result["rol"] or "administrador" in result["rol"] :
         result_serializable = json.loads(json_util.dumps(result))
