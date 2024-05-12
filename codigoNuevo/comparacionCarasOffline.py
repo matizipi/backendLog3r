@@ -35,7 +35,7 @@ def compararConDB(image_entrada):
     for user in cursor:
         
         aux=calculateCosineSimilarity(entrada,user["image"])
-        print(aux)
+        #print(aux)
         if(aux>max_similitude and aux>THRESHOLD):
             max_user_similitude=user
             max_similitude=aux
@@ -71,8 +71,8 @@ def vectorizarImagen(imagen):
     
     #entrada=detectarRostro(cv2.imread(entrada))
     #entrada=cv2.imread(imagen)
-    cv2.imshow("a",imagen)
-    cv2.waitKey(10000)
+    # cv2.imshow("a",imagen)
+    # cv2.waitKey(10000)
     posrostro_entrada=face_recognition.face_locations(imagen)[0]
     
     
@@ -93,7 +93,7 @@ def vectorizarImagen(imagen):
 
 def imagenSinRostros(imagen):
     rostros=face_recognition.face_locations(imagen)
-    print(rostros)
+    #print(rostros)
     if(len(rostros)==0):
         return True
     return False

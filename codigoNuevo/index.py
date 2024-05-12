@@ -29,11 +29,26 @@ def predict():
     result=comparacionCarasOffline.compararConDB(image)
     if result ==-1:        
         return jsonify({"message": "Autenticación fallida"}),401
-    
+    print(result["rol"])
     result_serializable = json.loads(json_util.dumps(result))
     
     return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
 
+@app.route('/api/login', methods=['POST'])
+def login():
+    file = request.files['image']
+    # Convertir la imagen a un formato adecuado para el procesamiento
+    image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
+    
+    result=comparacionCarasOffline.compararConDB(image)
+    if result ==-1:        
+        return jsonify({"message": "Autenticación fallida"}),401
+    
+    if "seguridad" in result["rol"] or "recursos humanos" in result["rol"] or "administrador" in result["rol"] :
+        result_serializable = json.loads(json_util.dumps(result))
+        return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
+    
+    return jsonify({"message": "Rol incorrecto"}),401
 ## Para el proximo sprint 3" 
 
 
