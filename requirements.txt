@@ -1,0 +1,4 @@
+opencv-contrib-python
+flask
+pymongo
+face_recognition
