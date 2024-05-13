@@ -20,6 +20,24 @@ def searchMdb():
     filtro = {}
     cursor = collection.find(filtro)
     return cursor
+    
+def registrarLog(mensaje,horario,dni):
+    # Realizar operaciones con la base de datos MongoDB
+    # Por ejemplo, puedes obtener una colección y devolver algunos documentos
+    collection = db['logs']    
+    response = collection.insert_one({
+        'horario':horario,
+        'mensaje':mensaje,
+        'dni':dni
+    })
+    result = {
+        'id': str(response.inserted_id),
+        'horario':horario,
+        'mensaje':mensaje,
+        'dni':dni
+    }
+    return result   
+
 
 if __name__== "__main__":
    

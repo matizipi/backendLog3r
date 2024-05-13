@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 #import captureFace,training 
 from mongoDB import searchMdb
+from mongoDB import registrarLog
 import comparacionCarasOffline
 import json
 from bson import json_util
@@ -57,6 +58,19 @@ def login():
 def register():
     return 
 
+@app.route('/api/authentication/logs',methods=['POST'])
+def logs():
+    data = request.form
+    mensaje = data.get('mensaje')
+    horario = data.get('horario')
+    dni = data.get('dni')
+    try:
+        resultado = registrarLog(mensaje,horario,dni) 
+        return jsonify(resultado), 200
+    except Exception as e:
+        # Si se produce un error, devuelve un código de estado HTTP 500 y un mensaje de error
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500     
 
 if __name__== "__main__":
     # development
