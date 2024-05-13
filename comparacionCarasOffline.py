@@ -2,19 +2,9 @@ import cv2
 import numpy as np
 import face_recognition
 from mongoDB import searchMdb
-import os
-import time
 import math
 ##Nivel local
-ruta_script = os.path.abspath(__file__)
-ruta_proyecto = os.path.dirname(os.path.dirname(ruta_script)) 
-datapath = os.path.join(ruta_proyecto, 'data')   
-peopleList = os.listdir(datapath)
 
-
-
-faceClassifier=cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml")
-prueba_path_entrada="D:/Facultad/AAAAAAFacultad/UNGS/Ano 2024/Cuatrimestre 1/Proyecto Profesional I/TP Final/flask-backend-log3r/rostrosParaTest/esteban.jpg"
 THRESHOLD=0.93
 imageSize=(150,150)
 
@@ -22,6 +12,8 @@ vectoresLocales=[]
 labels=[]
   
 def compararConDB(image_entrada):
+    if(imagenSinRostros(image_entrada)):
+        return -1
     
     cursor=searchMdb()
     max_user_similitude=-1
@@ -30,11 +22,12 @@ def compararConDB(image_entrada):
     for user in cursor:
         
         aux=calculateCosineSimilarity(entrada,user["image"])
-        print(aux)
+        #print(aux)
         if(aux>max_similitude and aux>THRESHOLD):
             max_user_similitude=user
             max_similitude=aux
     
+    cursor.close()
     return max_user_similitude
 
 
@@ -66,6 +59,8 @@ def vectorizarImagen(imagen):
     
     #entrada=detectarRostro(cv2.imread(entrada))
     #entrada=cv2.imread(imagen)
+    # cv2.imshow("a",imagen)
+    # cv2.waitKey(10000)
     posrostro_entrada=face_recognition.face_locations(imagen)[0]
     
     
@@ -84,4 +79,9 @@ def vectorizarImagen(imagen):
     return vector_rostro_entrada
 
 
-
+def imagenSinRostros(imagen):
+    rostros=face_recognition.face_locations(imagen)
+    #print(rostros)
+    if(len(rostros)==0):
+        return True
+    return False

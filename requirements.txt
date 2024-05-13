@@ -1,0 +1,7 @@
+# development
+pymongo
+flask
+python-dotenv
+certifi
+opencv-contrib-python
+face_recognition
