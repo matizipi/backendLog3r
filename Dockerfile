@@ -39,6 +39,8 @@ RUN pip install certifi
 RUN pip install opencv-contrib-python
 RUN pip install face_recognition
 RUN pip install waitress
+RUN pip install DateTime
+RUN pip install Flask-Cors
 
 # Copiar el resto de los archivos del directorio actual al contenedor
 COPY . .
