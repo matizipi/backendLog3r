@@ -7,8 +7,9 @@ from flask import Flask,jsonify,request
 import cv2 
 import numpy as np
 #import captureFace,training 
-from mongoDB import searchMdb
-from mongoDB import registrarLog
+
+from mongoDB import searchMdb,unionPersonaEspacios,registrarLog
+
 import comparacionCarasOffline
 import json
 from bson import json_util
@@ -35,8 +36,8 @@ def predict():
     if result ==-1:        
         return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
     print(result["rol"])
-    result_serializable = json.loads(json_util.dumps(result))
-    
+    #result_serializable = json.loads(json_util.dumps(result))
+    result_serializable = json.loads(json_util.dumps(unionPersonaEspacios(result["_id"])))
     return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
 
 @app.route('/api/login', methods=['POST'])
@@ -82,6 +83,22 @@ def logs():
     
 
 
+
+
+@app.route('/api/prueba', methods=['POST'])
+def prueba():
+    file = request.files['image']
+    # Convertir la imagen a un formato adecuado para el procesamiento
+    image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
+    
+    result=comparacionCarasOffline.compararConDB(image)
+    if result ==-1:        
+        return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
+    
+    lugares=unionPersonaEspacios(result["_id"])
+    result_serializable = json.loads(json_util.dumps(unionPersonaEspacios(result["_id"])))
+    #lugares = json.loads(json_util.dumps(lugares))
+    return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
 
 
 if __name__== "__main__":

@@ -68,7 +68,7 @@ def vectorizarImagen(imagen):
     vector_rostro_entrada=face_recognition.face_encodings(imagen,known_face_locations=[posrostro_entrada])
     
     
-    # print(vector_rostro_entrada)
+    #print(vector_rostro_entrada)
     #print(vector_rostro_prueba)
     #print(entrada[0])
     

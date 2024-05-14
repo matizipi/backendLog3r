@@ -21,6 +21,43 @@ def searchMdb():
     cursor = collection.find(filtro)
     return cursor
     
+
+    
+def unionPersonaEspacios(id):
+    result = db.usuarios.aggregate([
+        {
+        '$match': {
+            '_id': id  # Filtrar por el ID de la orden deseada
+        }
+    },
+    {
+        '$lookup': {
+            "from": "roles",
+            "localField": "rol",
+            "foreignField": "nombre",
+            "as": "rol_info"
+        }
+        
+    },
+    {
+        '$project': {
+            
+            "_id": 1,
+            "label": 1,
+            "nombre": 1,
+            "apellido": 1,
+            "dni": 1,
+            "rol": 1,
+            "horariosEntrada": 1,
+            "horariosSalida": 1,
+            "image": 1,
+            "lugares": "$rol_info.lugares"
+            
+        }
+    }
+])
+    return result
+
 def registrarLog(mensaje,horario,dni):
     # Realizar operaciones con la base de datos MongoDB
     # Por ejemplo, puedes obtener una colección y devolver algunos documentos
@@ -37,6 +74,7 @@ def registrarLog(mensaje,horario,dni):
         'dni':dni
     }
     return result   
+
 
 
 if __name__== "__main__":
