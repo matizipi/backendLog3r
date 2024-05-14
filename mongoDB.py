@@ -22,7 +22,23 @@ def searchMdb():
     return cursor
     
     
-
+def unionPersonaRol(id):
+    result = db.usuarios.aggregate([
+        {
+        '$match': {
+            '_id': id  # Filtrar por el ID de la orden deseada
+        }
+    },
+    {
+        '$lookup': {
+            'from': 'roles',  # Nombre de la colección a unir
+            'localField': 'rol',  # Campo de la colección "usuarios" que se relaciona con la otra colección
+            'foreignField': 'nombre',  # Campo de la colección "roles" que se relaciona con la otra colección
+            'as': 'rolesPersonas'  # Nombre del campo donde se almacenarán los documentos de la colección unida
+        }
+    }
+])
+    return result
 
 if __name__== "__main__":
    
