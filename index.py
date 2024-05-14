@@ -16,11 +16,11 @@ from bson import json_util
 from waitress import serve
 ## variable global para ir guardando el ultimo label usado en el modelo
 ultimo_Label = 0
-from flask_cors import CORS
+# from flask_cors import CORS
 
 
 app = Flask(__name__)
-cors = CORS(app)
+# cors = CORS(app)
 
 @app.route('/')
 def home():
@@ -28,17 +28,24 @@ def home():
 
 @app.route('/api/authentication', methods=['POST'])
 def predict():
-    file = request.files['image']
-    # Convertir la imagen a un formato adecuado para el procesamiento
-    image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
-    
-    result=comparacionCarasOffline.compararConDB(image)
-    if result ==-1:        
-        return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
-    print(result["rol"])
-    #result_serializable = json.loads(json_util.dumps(result))
-    result_serializable = json.loads(json_util.dumps(unionPersonaEspacios(result["_id"])))
-    return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
+    try:
+        file = request.files['image']
+        # Convertir la imagen a un formato adecuado para el procesamiento
+        image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
+        
+        result=comparacionCarasOffline.compararConDB(image)
+        if result ==-1:        
+            return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
+        print(result["rol"])
+        #result_serializable = json.loads(json_util.dumps(result))
+        user = unionPersonaEspacios(result["_id"]).next()
+        result_serializable = json.loads(json_util.dumps(user))
+
+        return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
+    except Exception as e:
+        # If an error occurs, return a 500 HTTP status code and an error message
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -80,25 +87,6 @@ def logs():
         # If an error occurs, return a 500 HTTP status code and an error message
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
-    
-
-
-
-
-@app.route('/api/prueba', methods=['POST'])
-def prueba():
-    file = request.files['image']
-    # Convertir la imagen a un formato adecuado para el procesamiento
-    image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
-    
-    result=comparacionCarasOffline.compararConDB(image)
-    if result ==-1:        
-        return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
-    
-    lugares=unionPersonaEspacios(result["_id"])
-    result_serializable = json.loads(json_util.dumps(unionPersonaEspacios(result["_id"])))
-    #lugares = json.loads(json_util.dumps(lugares))
-    return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
 
 
 if __name__== "__main__":

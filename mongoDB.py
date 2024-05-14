@@ -38,8 +38,7 @@ def unionPersonaEspacios(id):
             "as": "rol_info"
         }
         
-    },
-    {
+    },{
         '$project': {
             
             "_id": 1,
@@ -51,8 +50,7 @@ def unionPersonaEspacios(id):
             "horariosEntrada": 1,
             "horariosSalida": 1,
             "image": 1,
-            "lugares": "$rol_info.lugares"
-            
+            "lugares": {"$first":"$rol_info.lugares"}
         }
     }
 ])
