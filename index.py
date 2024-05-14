@@ -16,11 +16,11 @@ from bson import json_util
 from waitress import serve
 ## variable global para ir guardando el ultimo label usado en el modelo
 ultimo_Label = 0
-# from flask_cors import CORS
+from flask_cors import CORS
 
 
 app = Flask(__name__)
-# cors = CORS(app)
+cors = CORS(app)
 
 @app.route('/')
 def home():
