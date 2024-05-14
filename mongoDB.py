@@ -22,7 +22,7 @@ def searchMdb():
     return cursor
     
     
-def unionPersonaRol(id):
+def unionPersonaEspacios(id):
     result = db.usuarios.aggregate([
         {
         '$match': {
@@ -34,7 +34,16 @@ def unionPersonaRol(id):
             'from': 'roles',  # Nombre de la colección a unir
             'localField': 'rol',  # Campo de la colección "usuarios" que se relaciona con la otra colección
             'foreignField': 'nombre',  # Campo de la colección "roles" que se relaciona con la otra colección
-            'as': 'rolesPersonas'  # Nombre del campo donde se almacenarán los documentos de la colección unida
+            'as': 'roles_unidos'  # Nombre del campo donde se almacenarán los documentos de la colección unida
+        }
+        
+    },
+    {
+        '$project': {
+            
+            'roles_unidos.lugares': 1,  # Incluir solo el campo lugares de la colección roles
+            '_id': 0
+            
         }
     }
 ])

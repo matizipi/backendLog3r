@@ -3,7 +3,7 @@ from flask import Flask,jsonify,request
 import cv2 
 import numpy as np
 #import captureFace,training 
-from mongoDB import searchMdb,unionPersonaRol
+from mongoDB import searchMdb,unionPersonaEspacios
 import comparacionCarasOffline
 import json
 from bson import json_util
@@ -66,10 +66,10 @@ def prueba():
     if result ==-1:        
         return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
     
-    
-    result_serializable = json.loads(json_util.dumps(unionPersonaRol(result['_id'])))
-    
-    return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
+    lugares=unionPersonaEspacios(result["_id"])
+    result_serializable = json.loads(json_util.dumps(result))
+    lugares = json.loads(json_util.dumps(lugares))
+    return jsonify({"message": "Autenticación exitosa", "data": result_serializable,"lugares":lugares})
 
 
 if __name__== "__main__":
