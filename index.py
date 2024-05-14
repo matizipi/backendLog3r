@@ -33,8 +33,8 @@ def predict():
     if result ==-1:        
         return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
     print(result["rol"])
-    result_serializable = json.loads(json_util.dumps(result))
-    
+    #result_serializable = json.loads(json_util.dumps(result))
+    result_serializable = json.loads(json_util.dumps(unionPersonaEspacios(result["_id"])))
     return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
 
 @app.route('/api/login', methods=['POST'])
