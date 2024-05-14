@@ -10,18 +10,7 @@ imageSize=(150,150)
 
 vectoresLocales=[]
 labels=[]
-
-
-
-
- 
-
-
-
-
-    
-    
-    
+  
 def compararConDB(image_entrada):
     if(imagenSinRostros(image_entrada)):
         return -1
@@ -38,6 +27,7 @@ def compararConDB(image_entrada):
             max_user_similitude=user
             max_similitude=aux
     
+    cursor.close()
     return max_user_similitude
 
 
