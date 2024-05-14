@@ -32,18 +32,26 @@ def unionPersonaEspacios(id):
     },
     {
         '$lookup': {
-            'from': 'roles',  # Nombre de la colección a unir
-            'localField': 'rol',  # Campo de la colección "usuarios" que se relaciona con la otra colección
-            'foreignField': 'nombre',  # Campo de la colección "roles" que se relaciona con la otra colección
-            'as': 'roles_unidos'  # Nombre del campo donde se almacenarán los documentos de la colección unida
+            "from": "roles",
+            "localField": "rol",
+            "foreignField": "nombre",
+            "as": "rol_info"
         }
         
     },
     {
         '$project': {
             
-            'roles_unidos.lugares': 1,  # Incluir solo el campo lugares de la colección roles
-            '_id': 0
+            "_id": 1,
+            "label": 1,
+            "nombre": 1,
+            "apellido": 1,
+            "dni": 1,
+            "rol": 1,
+            "horariosEntrada": 1,
+            "horariosSalida": 1,
+            "image": 1,
+            "lugares": "$rol_info.lugares"
             
         }
     }

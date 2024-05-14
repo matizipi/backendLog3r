@@ -84,9 +84,9 @@ def prueba():
         return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
     
     lugares=unionPersonaEspacios(result["_id"])
-    result_serializable = json.loads(json_util.dumps(result))
-    lugares = json.loads(json_util.dumps(lugares))
-    return jsonify({"message": "Autenticación exitosa", "data": result_serializable,"lugares":lugares})
+    result_serializable = json.loads(json_util.dumps(unionPersonaEspacios(result["_id"])))
+    #lugares = json.loads(json_util.dumps(lugares))
+    return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
 
 
 if __name__== "__main__":
