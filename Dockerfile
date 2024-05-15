@@ -1,8 +1,10 @@
 # Usar una imagen base de Python
 FROM python:3.8-slim-buster
 
+ARG RAILWAY_SERVICE_ID
+
 # Instalar dependencias necesarias para compilar algunas bibliotecas de Python
-RUN apt-get update && apt-get install -y \
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/apt,target=/var/cache/apt apt-get update && apt-get install -y \
     build-essential \
     cmake \
     libopenblas-dev \
@@ -32,15 +34,16 @@ WORKDIR /app
 # Copiar los archivos de requisitos e instalar las dependencias
 # COPY requirements.txt .
 # RUN pip install -r requirements.txt
-RUN pip install pymongo
-RUN pip install flask
-RUN pip install python-dotenv
-RUN pip install certifi
-RUN pip install opencv-contrib-python
-RUN pip install face_recognition
-RUN pip install waitress
-RUN pip install DateTime
-RUN pip install Flask-Cors
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install pymongo
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install pymongo
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install flask
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install python-dotenv
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install certifi
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install opencv-contrib-python
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install face_recognition
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install waitress
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install DateTime
+RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/cache/pip,target=/root/.cache/pip pip install Flask-Cors
 
 # Copiar el resto de los archivos del directorio actual al contenedor
 COPY . .
