@@ -34,6 +34,7 @@ def predict():
         image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
         
         result=comparacionCarasOffline.compararConDB(image)
+        file.close()
         if result ==-1:        
             return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
         print(result["rol"])
@@ -54,6 +55,7 @@ def login():
     image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
     
     result=comparacionCarasOffline.compararConDB(image)
+    file.close()
     if result ==-1:        
         return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
     
