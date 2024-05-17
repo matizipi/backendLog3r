@@ -80,6 +80,8 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
     return result   
 
 
+
+
 if __name__== "__main__":
    
     searchMdb()
