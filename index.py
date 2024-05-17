@@ -80,7 +80,7 @@ def logs():
     
     try:
         # Convert string to datetime object
-        horario = datetime.strptime(horario_str, '%Y-%m-%d %H:%M:%S')  # Adjust the format if necessary
+        horario = datetime.strptime(horario_str, '%Y-%m-%d %H:%M:%S')  # Adjust the format if necessary       
         
         # Now you can use horario as a datetime object in your registrarLog function
         resultado = registrarLog(horario,nombre,apellido,dni,estado,tipo) 
