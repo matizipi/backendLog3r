@@ -56,23 +56,28 @@ def unionPersonaEspacios(id):
 ])
     return result
 
-def registrarLog(mensaje,horario,dni):
+def registrarLog(horario,nombre,apellido,dni,estado,tipo):
     # Realizar operaciones con la base de datos MongoDB
     # Por ejemplo, puedes obtener una colección y devolver algunos documentos
     collection = db['logs']    
     response = collection.insert_one({
         'horario':horario,
-        'mensaje':mensaje,
-        'dni':dni
-    })
+        'nombre':nombre,
+        'apellido':apellido,
+        'dni':int(dni),
+        'estado':estado,
+        'tipo':tipo})
+    
     result = {
-        'id': str(response.inserted_id),
+        'id': response.inserted_id,
         'horario':horario,
-        'mensaje':mensaje,
-        'dni':dni
+        'nombre':nombre,
+        'apellido':apellido,
+        'dni':dni,
+        'estado':estado,
+        'tipo':tipo
     }
     return result   
-
 
 
 if __name__== "__main__":
