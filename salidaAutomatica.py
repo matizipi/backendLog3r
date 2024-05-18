@@ -1,3 +1,4 @@
+import subprocess
 from pymongo import MongoClient
 from datetime import datetime,timedelta,timezone
 import schedule
@@ -5,8 +6,6 @@ import certifi
 import os
 from dotenv import load_dotenv
 import time
-from datetime import datetime
-
 from mongoDB import registrarLog
 
 # Cargar las variables del archivo .env
@@ -25,6 +24,11 @@ db = client[MONGO_DB]
 
 logs_collection = db['logs']
 
+# Definir la función para lanzar el script principal en segundo plano
+def launch_script():
+    # Lanza el script principal en segundo plano
+    subprocess.Popen(["python3", "salidaAutomatica.py"])
+    
 def automatic_log_out():
 
     utc_minus_3 = timezone(timedelta(hours=-3))
@@ -67,6 +71,9 @@ def automatic_log_out():
 
 # Programar la tarea diaria a las 23:59
 schedule.every().day.at("23:59").do(automatic_log_out)
+
+# Lanzar el script principal en segundo plano
+# launch_script()
 
 # Mantener el script en ejecución para que se ejecute la tarea programada
 while True:
