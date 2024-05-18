@@ -33,7 +33,7 @@ except Exception as err:
 
 def automatic_log_out():
     start = time.time()
-    utc_minus_3 = timezone(timedelta(hours=0)) #pasar las hores -3 para argentina
+    utc_minus_3 = timezone(timedelta(hours=0)) #!pasar las hores -3 si que quiere horario para argentina
     # Obtener la fecha actual en UTC-03:00 y la fecha de ayer en UTC-03:00
     now = datetime.now(utc_minus_3)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -50,7 +50,7 @@ def automatic_log_out():
             '$sort': {'horario': 1}
         },
         {
-            '$group': {
+            '$group': { 
                 '_id': '$dni',
                 'last_log': {'$last': '$$ROOT'}
             }
@@ -71,7 +71,7 @@ def automatic_log_out():
     for log in logs:
         if log.get('estado') == 'ingresando':  # log.get evitará que se lance un error KeyError si la clave 'estado' no está presente en un documento específico.            
             try:
-                registrarLog(logs_collection,now, log.get('nombre'), log.get('apellido'), log.get('dni'), 'saliendo', 'automatico')
+                registrarLog(now, log.get('nombre'), log.get('apellido'), log.get('dni'), 'saliendo', 'automatico')
             except errors.PyMongoError as err:
                 print(f"Error al registrar el log: {err}",flush=True)
    

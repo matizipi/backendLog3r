@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from pymongo import MongoClient
 import certifi
 
@@ -56,9 +57,15 @@ def unionPersonaEspacios(id):
 ])
     return result
 
-def registrarLog(collection,horario,nombre,apellido,dni,estado,tipo):
+def registrarLog(horario,nombre,apellido,dni,estado,tipo):
     # Realizar operaciones con la base de datos MongoDB
-    # Por ejemplo, puedes obtener una colección y devolver algunos documentos      
+    # Cargar las variables del archivo .env
+    load_dotenv()
+    # Configuración de la conexión a MongoDB
+    MONGO_URI = os.getenv('MONGO_URI')  
+    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+    db = client.get_database()  # Obtener la base de datos desde la URI
+    collection = db['logs']      
     response = collection.insert_one({
         'horario':horario,
         'nombre':nombre,
