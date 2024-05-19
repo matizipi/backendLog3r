@@ -64,6 +64,22 @@ def login():
         return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
     
     return jsonify({"message": "Rol incorrecto"}),401
+
+
+@app.route('/api/login2', methods=['POST'])
+def login2():
+    data = request.json # JSON payload containing the array of floats
+    embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
+
+    result = comparacionCarasOffline.compararEmbeddingConDB(embeddings)
+    if result == -1:
+        return jsonify({"message": "Autenticación fallida:Usuario No Registro"}), 401
+
+    if "seguridad" in result["rol"] or "recursos humanos" in result["rol"] or "administrador" in result["rol"]:
+        result_serializable = json.loads(json_util.dumps(result))
+        return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
+
+    return jsonify({"message": "Rol incorrecto"}), 401
 ## Para el proximo sprint 3" 
 
 
