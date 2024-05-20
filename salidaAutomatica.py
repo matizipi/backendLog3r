@@ -80,7 +80,7 @@ def automatic_log_out():
     print("Proceso de logout automático completado en : ",timeDuration,flush=True)
 
 # Programar la tarea diaria a las 23:59
-schedule.every().day.at("16:13").do(automatic_log_out)
+schedule.every().day.at("23:59").do(automatic_log_out)
 
 print("Iniciando bucle de ejecución",flush=True)
 # Mantener el script en ejecución para que se ejecute la tarea programada
