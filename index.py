@@ -48,6 +48,27 @@ def predict():
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
+
+@app.route('/api/authentication2', methods=['POST'])
+def authentication2():
+    try:
+        data = request.json  # JSON payload containing the array of floats
+        embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
+
+        result = comparacionCarasOffline.compararEmbeddingConDB(embeddings)
+        if result == -1:
+            return jsonify({"message": "Autenticación fallida:Usuario No Registro"}), 401
+        print(result["rol"])
+        # result_serializable = json.loads(json_util.dumps(result))
+        user = unionPersonaEspacios(result["_id"]).next()
+        result_serializable = json.loads(json_util.dumps(user))
+
+        return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
+    except Exception as e:
+        # If an error occurs, return a 500 HTTP status code and an error message
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500
+
 @app.route('/api/login', methods=['POST'])
 def login():
     file = request.files['image']
