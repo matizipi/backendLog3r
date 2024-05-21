@@ -33,14 +33,12 @@ def predict():
         # Convertir la imagen a un formato adecuado para el procesamiento
         image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
         
-        result=comparacionCarasOffline.compararConDB(image)
+        userFinded=comparacionCarasOffline.compararConDB(image)
         file.close()
-        if result ==-1:        
-            return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
-        print(result["rol"])
-        #result_serializable = json.loads(json_util.dumps(result))
-        user = unionPersonaEspacios(result["_id"]).next()
-        result_serializable = json.loads(json_util.dumps(user))
+        if userFinded ==-1:        
+            return jsonify({"message": "Autenticación fallida: Usuario No Registrado"}),401
+        user_con_lugares = unionPersonaEspacios(userFinded)
+        result_serializable = json.loads(json_util.dumps(user_con_lugares))
 
         return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
     except Exception as e:
