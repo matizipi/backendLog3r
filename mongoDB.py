@@ -90,7 +90,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
     MONGO_URI = os.getenv('MONGO_URI')  
     client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
     db = client.get_database()  # Obtener la base de datos desde la URI
-    collection = db['usuario']  # Cambiar el nombre de la colección a 'usuario'
+    collection = db['usuarios']  # Cambiar el nombre de la colección a 'usuario'
 
     response = collection.insert_one({
         'nombre': nombre,
@@ -115,7 +115,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
     return result
 
 def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
-    collection = db['usuario']  # Asegúrate de que el nombre de la colección es correcto
+    collection = db['usuarios']  # Asegúrate de que el nombre de la colección es correcto
     result = collection.update_one(
         {'_id': ObjectId(user_id)},
         {'$set': {
@@ -136,7 +136,7 @@ def deleteUser(user_id):
     return {'mensaje': 'Usuario eliminado' if result.deleted_count > 0 else 'Usuario no encontrado'}
 
 def getUsers():
-    collection = db['usuario']  # Asegúrate de que el nombre de la colección es correcto
+    collection = db['usuarios']  # Asegúrate de que el nombre de la colección es correcto
     cursor = collection.find()
     users = list(cursor)
     return json.loads(json_util.dumps(users))
