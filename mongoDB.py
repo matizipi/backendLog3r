@@ -3,6 +3,7 @@ from pymongo import MongoClient
 import certifi
 from bson import ObjectId
 from bson import json_util
+from dotenv import load_dotenv
 import json
 
 # Configuración de la conexión a MongoDB
@@ -83,7 +84,14 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
     return result   
 
 def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
-    collection = db['usuarios']
+    # Cargar las variables del archivo .env
+    load_dotenv()
+    # Configuración de la conexión a MongoDB
+    MONGO_URI = os.getenv('MONGO_URI')  
+    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+    db = client.get_database()  # Obtener la base de datos desde la URI
+    collection = db['usuario']  # Cambiar el nombre de la colección a 'usuario'
+
     response = collection.insert_one({
         'nombre': nombre,
         'apellido': apellido,
@@ -93,19 +101,21 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
         'horariosSalida': horariosSalida,
         'image': image
     })
-    return {
+
+    result = {
         'id': str(response.inserted_id),
         'nombre': nombre,
         'apellido': apellido,
-        'dni': dni,
+        'dni': int(dni),
         'rol': rol,
         'horariosEntrada': horariosEntrada,
         'horariosSalida': horariosSalida,
         'image': image
     }
+    return result
 
 def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
-    collection = db['usuarios']
+    collection = db['usuario']  # Asegúrate de que el nombre de la colección es correcto
     result = collection.update_one(
         {'_id': ObjectId(user_id)},
         {'$set': {
@@ -121,15 +131,16 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
     return {'mensaje': 'Usuario actualizado' if result.modified_count > 0 else 'No se realizaron cambios'}
 
 def deleteUser(user_id):
-    collection = db['usuarios']
+    collection = db['usuario']  # Asegúrate de que el nombre de la colección es correcto
     result = collection.delete_one({'_id': ObjectId(user_id)})
     return {'mensaje': 'Usuario eliminado' if result.deleted_count > 0 else 'Usuario no encontrado'}
 
 def getUsers():
-    collection = db['usuarios']
+    collection = db['usuario']  # Asegúrate de que el nombre de la colección es correcto
     cursor = collection.find()
     users = list(cursor)
     return json.loads(json_util.dumps(users))
+
 
 
 if __name__== "__main__":
