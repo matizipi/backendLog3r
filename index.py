@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import subprocess
 from dotenv import load_dotenv
 load_dotenv()
 import cv2.data
@@ -93,7 +94,11 @@ def logs():
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
-
+def launch_script_automatic_log():
+    # Lanza el script salidaAutomatica.py en segundo plano
+    process = subprocess.Popen(
+        ["python", "salidaAutomatica.py"]
+    )
 
 if __name__== "__main__":
     # development
@@ -101,5 +106,5 @@ if __name__== "__main__":
 
 def deploy_server():
     # production
-    port = os.getenv('PORT') # provided by Railway
+    port = os.getenv('PORT') # provided by Railway    
     serve(app, host='0.0.0.0', port=port)

@@ -1,3 +1,4 @@
+import logging
 from pymongo import MongoClient, errors
 from datetime import datetime, timedelta, timezone
 import schedule
@@ -7,7 +8,16 @@ from dotenv import load_dotenv
 import time
 from mongoDB import registrarLog
 
-print("Inicio de salidaAutomatica.py", flush=True)  # Asegura que el mensaje se imprima) 
+
+# Configurar logging
+logging.basicConfig(
+    filename='salidaAutomatica.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%dT%H:%M:%S%z'
+)
+
+logging.info("Inicio de salidaAutomatica.py")  # Asegura que el mensaje se registre
 
 # Cargar las variables del archivo .env
 load_dotenv()
@@ -20,20 +30,20 @@ try:
     client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
     db = client.get_database()  # Obtener la base de datos desde la URI
     logs_collection = db['logs']
-    print("Conexión a MongoDB establecida correctamente.",flush=True)
+    logging.info("Conexión a MongoDB establecida correctamente.")
 except errors.ServerSelectionTimeoutError as err:
-    print(f"Error al conectar a MongoDB: {err}")
+    logging.error(f"Error al conectar a MongoDB: {err}")
     exit(1)
 except errors.ConfigurationError as err:
-    print(f"Configuración de MongoDB incorrecta: {err}",flush=True)
+    logging.error(f"Configuración de MongoDB incorrecta: {err}")
     exit(1)
 except Exception as err:
-    print(f"Error inesperado al conectar a MongoDB: {err}",flush=True)
+    logging.error(f"Error inesperado al conectar a MongoDB: {err}")
     exit(1)
 
 def automatic_log_out():
     start = time.time()
-    utc_minus_3 = timezone(timedelta(hours=0)) #!pasar las hores -3 si que quiere horario para argentina
+    utc_minus_3 = timezone(timedelta(hours=0)) # Ajustar a -3 si se quiere el horario de Argentina
     # Obtener la fecha actual en UTC-03:00 y la fecha de ayer en UTC-03:00
     now = datetime.now(utc_minus_3)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -60,32 +70,32 @@ def automatic_log_out():
         }
     ]
 
-   # Ejecutar el pipeline de agregación
+    # Ejecutar el pipeline de agregación
     try:
         logs = list(logs_collection.aggregate(pipeline))
-        print(logs,flush=True)
+        logging.info(f"Logs obtenidos: {logs}")
     except errors.PyMongoError as err:
-        print(f"Error al ejecutar el pipeline de agregación: {err}")
+        logging.error(f"Error al ejecutar el pipeline de agregación: {err}")
         return
- # Procesar los logs y actualizar el estado si es necesario
+
+    # Procesar los logs y actualizar el estado si es necesario
     for log in logs:
         if log.get('estado') == 'ingresando':  # log.get evitará que se lance un error KeyError si la clave 'estado' no está presente en un documento específico.            
             try:
                 registrarLog(now, log.get('nombre'), log.get('apellido'), log.get('dni'), 'saliendo', 'automatico')
+                logging.info(f"Registrado log automático para {log.get('dni')}")
             except errors.PyMongoError as err:
-                print(f"Error al registrar el log: {err}",flush=True)
+                logging.error(f"Error al registrar el log: {err}")
    
     finish = time.time()
     timeDuration = finish - start
-    print("Proceso de logout automático completado en : ",timeDuration,flush=True)
+    logging.info(f"Proceso de logout automático completado en: {timeDuration}")
 
 # Programar la tarea diaria a las 23:59
 schedule.every().day.at("23:59").do(automatic_log_out)
 
-print("Iniciando bucle de ejecución",flush=True)
+logging.info("Iniciando bucle de ejecución")
 # Mantener el script en ejecución para que se ejecute la tarea programada
 while True:
     schedule.run_pending()
-    time.sleep(60) 
-
-
+    time.sleep(60)
