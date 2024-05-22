@@ -9,14 +9,21 @@ import cv2
 import numpy as np
 #import captureFace,training 
 
-from mongoDB import searchMdb,unionPersonaEspacios,registrarLog
+from mongoDB import (
+    searchMdb, 
+    unionPersonaEspacios, 
+    registrarLog, 
+    createUser, 
+    updateUser, 
+    deleteUser, 
+    getUsers
+)
+
 
 import comparacionCarasOffline
 import json
-from bson import json_util
+from bson import json_util,ObjectId
 from waitress import serve
-## variable global para ir guardando el ultimo label usado en el modelo
-ultimo_Label = 0
 from flask_cors import CORS
 
 
@@ -99,6 +106,76 @@ def launch_script_automatic_log():
     process = subprocess.Popen(
         ["python", "salidaAutomatica.py"]
     )
+@app.route('/api/users', methods=['POST'])
+def create_user():
+    data = request.json
+    try:
+        nombre = data.get('nombre')
+        apellido = data.get('apellido')
+        dni = data.get('dni')
+        rol = data.get('rol')
+        horariosEntrada = data.get('horariosEntrada')
+        horariosSalida = data.get('horariosSalida')
+        image = data.get('image')
+        
+        # Validar categorías
+        if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
+            return jsonify({"error": "Rol no válido"}), 400
+        
+        # Validar campos requeridos
+        if not all([nombre, apellido, dni, rol]):
+            return jsonify({"error": "Faltan datos obligatorios"}), 400
+        
+        result = createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+        return jsonify(result), 201
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500
+
+@app.route('/api/users/<user_id>', methods=['PUT'])
+def update_user(user_id):
+    data = request.json
+    try:
+        nombre = data.get('nombre')
+        apellido = data.get('apellido')
+        dni = data.get('dni')
+        rol = data.get('rol')
+        horariosEntrada = data.get('horariosEntrada')
+        horariosSalida = data.get('horariosSalida')
+        image = data.get('image')
+        
+        # Validar categorías
+        if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
+            return jsonify({"error": "Rol no válido"}), 400
+        
+        # Validar campos requeridos
+        if not all([nombre, apellido, dni, rol]):
+            return jsonify({"error": "Faltan datos obligatorios"}), 400
+        
+        result = updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+        return jsonify(result), 200
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500
+
+@app.route('/api/users/<user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    try:
+        result = deleteUser(user_id)
+        return jsonify(result), 200
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500
+
+@app.route('/api/users', methods=['GET'])
+def get_users():
+    try:
+        result = getUsers()
+        return jsonify(result), 200
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500
+
 
 if __name__== "__main__":
     # development

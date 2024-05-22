@@ -1,7 +1,12 @@
 # development
+dlib
 pymongo
 flask
 python-dotenv
 certifi
+waitress
+DateTime
+Flask-Cors
 opencv-contrib-python
 face_recognition
+opencv-python-headless
