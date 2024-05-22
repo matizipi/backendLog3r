@@ -122,7 +122,8 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
     if result.modified_count > 0:
         json_usuario_modificado = getUser(user_id) #obtengo usuario modificado        
         label = collection.find_one({ '_id': ObjectId(user_id)}, { 'label': 1, '_id': 0 })
-        guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado)
+        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado)
+        normalizarDatosEnLogs(campos_modificados,label)
     return {'mensaje': 'Usuario actualizado' if result.modified_count > 0 else 'No se realizaron cambios'}
 
 def deleteUser(user_id):
@@ -163,7 +164,8 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_
             'fechaDeCambio':time.now(),
             'usuarioResponsable':''
         })
-    
+    return campos_modificados
+
 def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
     collection = db['historial_usuarios']
     result = collection.insert_one({
@@ -178,6 +180,14 @@ def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, 
             'fechaDeCambio':time.now(),
             'usuarioResponsable':''
         })
+def normalizarDatosEnLogs(cambios,label): 
+    logs = db['logs']   
+    filtro = {'label': label}           
+    actualizacion = {'$set': cambios}
+
+    # Ejecutar la actualización
+    logs.update_many(filtro, actualizacion)  
+        
 
 if __name__== "__main__":
    
