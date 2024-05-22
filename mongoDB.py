@@ -131,7 +131,7 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
     return {'mensaje': 'Usuario actualizado' if result.modified_count > 0 else 'No se realizaron cambios'}
 
 def deleteUser(user_id):
-    collection = db['usuario']  # Asegúrate de que el nombre de la colección es correcto
+    collection = db['usuarios']  # Asegúrate de que el nombre de la colección es correcto
     result = collection.delete_one({'_id': ObjectId(user_id)})
     return {'mensaje': 'Usuario eliminado' if result.deleted_count > 0 else 'Usuario no encontrado'}
 
