@@ -160,13 +160,13 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_
     collection = db['historial_usuarios']
     response = collection.insert_one({
             'label':label,
-            'nombre': campos_modificados.get('nombre') if 'label' in  campos_modificados.keys else '',
-            'apellido': campos_modificados.get('apellido') if 'label' in  campos_modificados.keys else '',
-            'dni': int(campos_modificados.get('dni')) if 'label' in  campos_modificados.keys else '',
-            'rol': campos_modificados.get('rol') if 'label' in  campos_modificados.keys else '',
-            'horariosEntrada': campos_modificados.get('horariosEntrada') if 'label' in  campos_modificados.keys else '',
-            'horariosSalida': campos_modificados.get('horariosSalida') if 'label' in  campos_modificados.keys else '',
-            'image': campos_modificados.get('image') if 'label' in  campos_modificados.keys else '',
+            'nombre': campos_modificados.get('nombre') if 'nombre' in  campos_modificados.keys else '',
+            'apellido': campos_modificados.get('apellido') if 'apellido' in  campos_modificados.keys else '',
+            'dni': int(campos_modificados.get('dni')) if 'dni' in  campos_modificados.keys else '',
+            'rol': campos_modificados.get('rol') if 'rol' in  campos_modificados.keys else '',
+            'horariosEntrada': campos_modificados.get('horariosEntrada') if 'horariosEntrada' in  campos_modificados.keys else '',
+            'horariosSalida': campos_modificados.get('horariosSalida') if 'horariosSalida' in  campos_modificados.keys else '',
+            'image': campos_modificados.get('image') if 'image' in  campos_modificados.keys else '',
             'fechaDeCambio':time.now(),
             'usuarioResponsable':''
         })
