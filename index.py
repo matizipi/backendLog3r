@@ -23,8 +23,6 @@ import comparacionCarasOffline
 import json
 from bson import json_util,ObjectId
 from waitress import serve
-## variable global para ir guardando el ultimo label usado en el modelo
-ultimo_Label = 0
 from flask_cors import CORS
 
 
@@ -172,8 +170,6 @@ def get_users():
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
 
 if __name__== "__main__":
     # development
