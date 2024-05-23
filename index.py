@@ -117,6 +117,7 @@ def create_user():
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
         image = data.get('image')
+        email = data.get('email')
         
         # Validar categorías
         if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
@@ -126,7 +127,7 @@ def create_user():
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
         
-        result = createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+        result = createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email)
         return jsonify(result), 201
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
