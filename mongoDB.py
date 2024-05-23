@@ -1,4 +1,4 @@
-from datetime import time
+from datetime import datetime, time
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -89,10 +89,10 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
     }
     return result   
 
-def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
+def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     # Buscar usuario por dni para corroborar si existe
-    usuario_existente = collection.find_one({'dni': dni})
+    usuario_existente = collection.find_one({'$or': [{'dni': dni},{'email': email}]})
 
     if usuario_existente==None:
              
@@ -107,7 +107,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
         })
         label = collection.find_one({ '_id': response.inserted_id }, { 'label': 1, '_id': 0 })
         guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
-    return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El dni ya existe en la base de datos perteneciente al id ${response.inserted_id}',}
+    return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${response.inserted_id}',}
  
 
 def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
@@ -198,6 +198,6 @@ def normalizarDatosEnLogs(cambios,label):
 
 
 if __name__== "__main__":
-   
+    
     searchMdb()
     
