@@ -16,6 +16,7 @@ from bson import json_util
 from waitress import serve
 ## variable global para ir guardando el ultimo label usado en el modelo
 ultimo_Label = 0
+
 from flask_cors import CORS
 
 
@@ -93,7 +94,23 @@ def logs():
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
+@app.route('/api/certeza', methods=['GET'])
+def getCerteza():
+    return comparacionCarasOffline.getTHRESHOLD()
 
+
+@app.route('/api/certeza', methods=['POST'])
+def setCerteza():
+    umbral=request.form.get("THRESHOLD")
+    
+    try:
+        if(comparacionCarasOffline.setTHRESHOLD(request.form.get("THRESHOLD"))):
+            return "Cambio exitoso",200
+        return "Cambio denegado",400
+    except Exception as e:
+        print(e)
+        return "Error de entrada",500
+    
 
 if __name__== "__main__":
     # development

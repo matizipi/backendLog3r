@@ -1,6 +1,7 @@
 import os
-from pymongo import MongoClient
+from pymongo import MongoClient,ASCENDING
 import certifi
+from datetime import datetime
 
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
@@ -78,6 +79,23 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
         'tipo':tipo
     }
     return result   
+
+def leerTHRESHOLD():
+    collection = db['configuraciones']
+    
+    cursor = collection.find().sort({"fechaDeCambio":-1}).limit(1)
+    THRESHOLDD_document=cursor.next()
+    cursor.close()
+    return THRESHOLDD_document["valor"]
+
+def insertarTHRESHOLD(THRESHOLD):
+    collection = db['configuraciones']
+    collection.insert_one({
+        
+        'nombre':"certeza",
+        'valor':THRESHOLD,
+        'usuarioDeCambio':"inicial",
+        'fechaDeCambio':datetime.now()})
 
 
 if __name__== "__main__":

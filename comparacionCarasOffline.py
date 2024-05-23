@@ -1,11 +1,14 @@
 import cv2
 import numpy as np
 import face_recognition
-from mongoDB import searchMdb
+from mongoDB import searchMdb,leerTHRESHOLD,insertarTHRESHOLD
 import math
+from datetime import datetime
+
+
 ##Nivel local
 
-THRESHOLD=0.93
+THRESHOLD=leerTHRESHOLD()
 imageSize=(150,150)
 
 vectoresLocales=[]
@@ -83,5 +86,19 @@ def imagenSinRostros(imagen):
     rostros=face_recognition.face_locations(imagen)
     #print(rostros)
     if(len(rostros)==0):
+        return True
+    return False
+
+
+def getTHRESHOLD():
+    return str(THRESHOLD)
+
+def setTHRESHOLD(nuevo_umbral):
+    global THRESHOLD
+    nuevo_umbral=float(nuevo_umbral)
+    
+    if(nuevo_umbral>=0 and nuevo_umbral<=1):
+        insertarTHRESHOLD(nuevo_umbral)
+        THRESHOLD=nuevo_umbral
         return True
     return False
