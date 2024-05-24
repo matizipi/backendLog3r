@@ -59,6 +59,8 @@ def unionPersonaEspacios(id):
     }
 ])
     return result
+def getLogs(fecha):
+    pass
 
 def registrarLog(horario,nombre,apellido,dni,estado,tipo):
     # Realizar operaciones con la base de datos MongoDB

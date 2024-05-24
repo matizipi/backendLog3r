@@ -75,10 +75,17 @@ def login():
     return jsonify({"message": "Rol incorrecto"}),401
 ## Para el proximo sprint 3" 
 
+@app.route('/api/logs', methods=['GET'])
+def get_logs():
+    data = request.json      
+    try:
+        fecha = data.get('fecha')
+        result = getLogs()
+        return jsonify(result), 200
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500
 
-@app.route('/api/register', methods=['POST'])
-def register():
-    return 
 @app.route('/api/authentication/logs', methods=['POST'])
 def logs():
     data = request.form    
