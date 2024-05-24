@@ -77,13 +77,13 @@ def login():
     return jsonify({"message": "Rol incorrecto"}),401
 ## Para el proximo sprint 3" 
 
-@app.route('/api/logs', methods=['GET'])
+@app.route('/api/day/logs', methods=['GET'])
 def get_logs():
     data = request.json      
     try:
         fecha = data.get('fecha')
-        result = getLogs()
-        return jsonify(result), 200
+        result = obtener_logs_dia_especifico(fecha)
+        return result, 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
