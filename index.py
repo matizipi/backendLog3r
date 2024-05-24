@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import subprocess
 from dotenv import load_dotenv
 load_dotenv()
 import cv2.data
@@ -9,6 +10,7 @@ import numpy as np
 #import captureFace,training 
 
 from mongoDB import (
+    obtener_logs_dia_especifico,
     searchMdb, 
     unionPersonaEspacios, 
     registrarLog, 
@@ -109,6 +111,11 @@ def logs():
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
+def launch_script_automatic_log():
+    # Lanza el script salidaAutomatica.py en segundo plano
+    process = subprocess.Popen(
+        ["python", "salidaAutomatica.py"]
+    )
 @app.route('/api/users', methods=['POST'])
 def create_user():
     data = request.json
@@ -120,16 +127,17 @@ def create_user():
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
         image = data.get('image')
+        email = data.get('email')
         
         # Validar categorías
-        if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
-            return jsonify({"error": "Rol no válido"}), 400
+        #if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
+        #    return jsonify({"error": "Rol no válido"}), 400
         
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
         
-        result = createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+        result = createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email)
         return jsonify(result), 201
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
@@ -146,7 +154,8 @@ def update_user(user_id):
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
         image = data.get('image')
-        
+        email = data.get('email')
+
         # Validar categorías
         if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
             return jsonify({"error": "Rol no válido"}), 400
@@ -155,7 +164,7 @@ def update_user(user_id):
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
         
-        result = updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+        result = updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email)
         return jsonify(result), 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
@@ -170,7 +179,6 @@ def delete_user(user_id):
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
-
 
 @app.route('/api/users', methods=['GET'])
 def get_users():
@@ -188,5 +196,5 @@ if __name__== "__main__":
 
 def deploy_server():
     # production
-    port = os.getenv('PORT') # provided by Railway
+    port = os.getenv('PORT') # provided by Railway    
     serve(app, host='0.0.0.0', port=port)
