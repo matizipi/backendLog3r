@@ -105,9 +105,8 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
             'image': image
-        })
-        label = collection.find_one({ '_id': response.inserted_id }, { 'label': 1, '_id': 0 })
-        guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+        })       
+        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
     return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${response.inserted_id}',}
  
 
@@ -127,10 +126,9 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
         }}
     )
     if result.modified_count > 0:
-        json_usuario_modificado = getUser(user_id) #obtengo usuario modificado        
-        label = collection.find_one({ '_id': ObjectId(user_id)}, { 'label': 1, '_id': 0 })
-        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado)
-        normalizarDatosEnLogs(campos_modificados,label)
+        json_usuario_modificado = getUser(user_id) #obtengo usuario modificado       
+        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
+        normalizarDatosEnLogs(json_usuario_original,campos_modificados)
     return {'mensaje': 'Usuario actualizado' if result.modified_count > 0 else 'No se realizaron cambios'}
 
 def deleteUser(user_id):
@@ -180,7 +178,7 @@ def getUsers():
     users = list(cursor)
     return json.loads(json_util.dumps(users))
 
-def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado):
+def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado):
      # Lista para almacenar los campos modificados
     campos_modificados = {}
 
@@ -190,8 +188,7 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_
             campos_modificados[campo] = valor_actual
     
     collection = db['historial_usuarios']
-    response = collection.insert_one({
-            'label':label,
+    response = collection.insert_one({            
             'nombre': campos_modificados.get('nombre') if 'nombre' in  campos_modificados.keys else '',
             'apellido': campos_modificados.get('apellido') if 'apellido' in  campos_modificados.keys else '',
             'dni': int(campos_modificados.get('dni')) if 'dni' in  campos_modificados.keys else '',
@@ -204,10 +201,9 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_
         })
     return campos_modificados
 
-def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
+def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
     collection = db['historial_usuarios']
-    result = collection.insert_one({
-            'label':label,
+    result = collection.insert_one({            
             'nombre': nombre,
             'apellido': apellido,
             'dni': int(dni),
@@ -218,9 +214,10 @@ def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, 
             'fechaDeCambio':time.now(),
             'usuarioResponsable':''
         })
-def normalizarDatosEnLogs(cambios,label): 
+def normalizarDatosEnLogs(json_usuario_original,cambios): 
+    dni = json_usuario_original.get('dni')
     logs = db['logs']   
-    filtro = {'label': label}           
+    filtro = {'dni': dni}           
     actualizacion = {'$set': cambios}
 
     # Ejecutar la actualización

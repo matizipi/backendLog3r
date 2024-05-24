@@ -80,9 +80,9 @@ def automatic_log_out():
 
     # Procesar los logs y actualizar el estado si es necesario
     for log in logs:
-        if log.get('estado') == 'ingresando':  # log.get evitará que se lance un error KeyError si la clave 'estado' no está presente en un documento específico.            
+        if log.get('estado') == 'Ingresando':  # log.get evitará que se lance un error KeyError si la clave 'estado' no está presente en un documento específico.            
             try:
-                registrarLog(now, log.get('nombre'), log.get('apellido'), log.get('dni'), 'saliendo', 'automatico')
+                registrarLog(now, log.get('nombre'), log.get('apellido'), log.get('dni'), 'Saliendo', 'Automatico')
                 logging.info(f"Registrado log automático para {log.get('dni')}")
             except errors.PyMongoError as err:
                 logging.error(f"Error al registrar el log: {err}")
