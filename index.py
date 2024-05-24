@@ -168,6 +168,7 @@ def delete_user(user_id):
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
+    
 
 @app.route('/api/day/logs', methods=['GET'])
 def get_logs():
