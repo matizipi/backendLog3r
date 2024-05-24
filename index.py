@@ -10,6 +10,7 @@ import numpy as np
 #import captureFace,training 
 
 from mongoDB import (
+    obtener_logs_dia_especifico,
     searchMdb, 
     unionPersonaEspacios, 
     registrarLog, 
@@ -168,6 +169,18 @@ def delete_user(user_id):
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
+@app.route('/api/day/logs', methods=['GET'])
+def get_logs():
+    data = request.json      
+    try:
+        fecha = data.get('fecha')
+        result = obtener_logs_dia_especifico(fecha)
+        return result, 200
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500
+    
+    
 @app.route('/api/users', methods=['GET'])
 def get_users():
     try:

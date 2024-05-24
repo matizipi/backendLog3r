@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -92,7 +92,8 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
 def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     # Buscar usuario por dni para corroborar si existe
-    usuario_existente = collection.find_one({'$or': [{'dni': dni},{'email': email}]})
+    usuario_existente = collection.find_one({'$or': [{'dni': dni},{'email': email}]
+    })
 
     if usuario_existente==None:
              
@@ -141,6 +142,37 @@ def getUser(user_id):
     collection = db['usuarios']
     user = collection.find_one({'_id': ObjectId(user_id)})
     return json.loads(json_util.dumps(user))
+
+def obtener_logs_dia_especifico(fecha):
+    load_dotenv()
+    MONGO_URI = os.getenv('MONGO_URI')
+    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+    db = client.get_database()
+    collection = db['logs']
+
+    # Convertir la fecha en un rango de inicio y fin del día
+    fecha_inicio = datetime.combine(fecha, datetime.min.time()) #la hora mínima (00:00:00).
+    fecha_fin = fecha_inicio + timedelta(days=1)
+
+    # Pipeline de agregación
+    pipeline = [
+        {
+            '$match': {
+                'timestamp': {
+                    '$gte': fecha_inicio,
+                    '$lt': fecha_fin
+                }
+            }
+        }
+    ]
+
+    # Ejecutar el pipeline
+    resultados = list(collection.aggregate(pipeline))
+
+    # Convertir los resultados a JSON
+    resultados_json = json.dumps(resultados, default=str)
+
+    return resultados_json
 
 def getUsers():
     collection = db['usuarios']
@@ -198,6 +230,6 @@ def normalizarDatosEnLogs(cambios,label):
 
 
 if __name__== "__main__":
-    
+   
     searchMdb()
     
