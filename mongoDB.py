@@ -1,6 +1,8 @@
 import os
 from pymongo import MongoClient
 import certifi
+from bson.objectid import ObjectId
+
 
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
@@ -16,12 +18,32 @@ db = client[MONGO_DB]
 def searchMdb():
     # Realizar operaciones con la base de datos MongoDB
     # Por ejemplo, puedes obtener una colección y devolver algunos documentos
-    collection = db['usuarios']    
+    collection = db['usuarios']
     filtro = {}
     cursor = collection.find(filtro)
     return cursor
-    
 
+def getImageEmbeddings():
+    # Realizar operaciones con la base de datos MongoDB
+    # Por ejemplo, puedes obtener una colección y devolver algunos documentos
+    collection = db['imagenes']
+    filtro = {}
+    cursor = collection.find(filtro)
+    return cursor
+
+
+# Function to get user by ObjectId
+def getUserByObjectid(object_id):
+    try:
+        # Access the collection
+        collection = db['usuarios']
+
+        # Find the user
+        user = collection.find_one({"_id": object_id})
+        return user
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
     
 def unionPersonaEspacios(id):
     result = db.usuarios.aggregate([

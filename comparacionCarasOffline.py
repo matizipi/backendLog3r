@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 import face_recognition
-from mongoDB import searchMdb
+from mongoDB import searchMdb, getUserByObjectid, getImageEmbeddings
+
 import math
 ##Nivel local
 
@@ -39,23 +40,27 @@ def compararEmbeddingConDB(embedding_input):
     if len(embedding_input) < 1:
         return -1
 
-    cursor = searchMdb()
-    max_user_similitude = -1
+    user = -1
+    cursor = getImageEmbeddings()
+    max_imagen_similitude = -1
     max_similitude = 0
-    for user in cursor:
+    for imagen in cursor:
 
-        embeddings_db = user['image']
+        embeddings_db = imagen['embedding']
         # check if empty
         if len(embeddings_db) == len(embedding_input):
 
             aux = calculateCosineSimilarity(embedding_input, embeddings_db)
             # print(aux)
             if (aux > max_similitude and aux > THRESHOLD):
-                max_user_similitude = user
+                max_imagen_similitude = imagen
                 max_similitude = aux
 
     cursor.close()
-    return max_user_similitude
+    if(max_imagen_similitude != -1):
+        print(max_imagen_similitude)
+        user = getUserByObjectid(max_imagen_similitude['userId'])
+    return user
 
 
 

@@ -54,11 +54,12 @@ def authentication2():
     try:
         data = request.json  # JSON payload containing the array of floats
         embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
+        # print(embeddings)
 
         result = comparacionCarasOffline.compararEmbeddingConDB(embeddings)
         if result == -1:
             return jsonify({"message": "Autenticación fallida:Usuario No Registro"}), 401
-        print(result["rol"])
+        # print(result["rol"])
         # result_serializable = json.loads(json_util.dumps(result))
         user = unionPersonaEspacios(result["_id"]).next()
         result_serializable = json.loads(json_util.dumps(user))
