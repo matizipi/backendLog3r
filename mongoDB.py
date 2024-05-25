@@ -6,6 +6,7 @@ import certifi
 from bson import ObjectId
 from bson import json_util
 import json
+import face_recognition
 
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
@@ -104,7 +105,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image
+            'image': vectorizarImagen(image)
         })       
         guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
     return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${response.inserted_id}',}
@@ -223,7 +224,11 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
         
-
+def vectorizarImagen(imagen):    
+    posrostro_entrada=face_recognition.face_locations(imagen)[0]    
+    vector_rostro_entrada=face_recognition.face_encodings(imagen,known_face_locations=[posrostro_entrada]) 
+    
+    return vector_rostro_entrada
 
 
 if __name__== "__main__":
