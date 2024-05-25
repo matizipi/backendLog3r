@@ -105,7 +105,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image,
+            'image': vectorizarImagen(image),
             'email': email
         })       
         guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
