@@ -6,6 +6,9 @@ import certifi
 from bson import ObjectId
 from bson import json_util
 import json
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
@@ -129,6 +132,7 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
         json_usuario_modificado = getUser(user_id) #obtengo usuario modificado       
         campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
         normalizarDatosEnLogs(json_usuario_original,campos_modificados)
+        notificarAlPersonalJerarquico(json_usuario_original,json_usuario_modificado)
     return {'mensaje': 'Usuario actualizado' if result.modified_count > 0 else 'No se realizaron cambios'}
 
 def deleteUser(user_id):
@@ -222,8 +226,58 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
 
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
-        
 
+def notificarAlPersonalJerarquico(json_usuario_original,json_usuario_modificado):
+    asunto="Notificación sobre cambio de titularidad"
+    collection = db['usuarios']
+    personal_jerarquico = collection.find({"rol": "personal jerárquico"})
+    emails = [user['email'] for user in personal_jerarquico]
+
+    mensaje=generar_cuerpo_del_correo(json_usuario_original,json_usuario_modificado)
+
+    for email in emails:
+        send_email(email, asunto, mensaje)
+
+
+def generar_cuerpo_del_correo(original, modificado):
+    cambios = []
+    for key in original:
+        if key in modificado and original[key] != modificado[key]:
+            cambios.append(f"{key}: {original[key]} -> {modificado[key]}")
+    
+    if not cambios:
+        return "No se han realizado modificaciones."
+    
+    cuerpo = "Se han realizado los siguientes cambios en la información del usuario:\n\n"
+    cuerpo += "\n".join(cambios)
+    return cuerpo
+
+def send_email(to_email, subject, message):
+
+    smtp_server = 'smtp.gmail.com'
+    smtp_port = 587
+    smtp_user = 'log3rapp@gmail.com'
+    smtp_password = 'log3rAlpha'
+
+    # Configuración del mensaje
+    msg = MIMEMultipart()
+    msg['From'] = smtp_user
+    msg['To'] = to_email
+    msg['Subject'] = subject
+
+    # Adjuntar el cuerpo del mensaje
+    msg.attach(MIMEText(message, 'plain'))
+
+    # Conectar al servidor SMTP y enviar el correo
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.sendmail(smtp_user, to_email, msg.as_string())
+        server.quit()
+        print(f'Correo enviado a {to_email}')
+    except Exception as e:
+        print(f'Error al enviar el correo a {to_email}: {e}')
 
 
 if __name__== "__main__":
