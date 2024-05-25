@@ -90,7 +90,7 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
     }
     return result   
 
-def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image, email):
+def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     # Buscar usuario por dni para corroborar si existe
     usuario_existente = collection.find_one({'$or': [{'dni': dni},{'email': email}]
@@ -199,7 +199,7 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modifi
             'horariosEntrada': campos_modificados.get('horariosEntrada') if 'horariosEntrada' in  campos_modificados.keys else '',
             'horariosSalida': campos_modificados.get('horariosSalida') if 'horariosSalida' in  campos_modificados.keys else '',
             'image': campos_modificados.get('image') if 'image' in  campos_modificados.keys else '',
-            'fechaDeCambio':time.now(),
+            'fechaDeCambio':datetime.now(),
             'usuarioResponsable':''
         })
     return campos_modificados
@@ -214,7 +214,7 @@ def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horari
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
             'image': image,
-            'fechaDeCambio':time.now(),
+            'fechaDeCambio':datetime.now(),
             'usuarioResponsable':''
         })
 def normalizarDatosEnLogs(json_usuario_original,cambios): 
