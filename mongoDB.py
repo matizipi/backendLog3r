@@ -124,7 +124,7 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': vectorizarImagen(image),
+            'image': image,
             'email': email
         }}
     )
