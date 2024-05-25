@@ -126,7 +126,7 @@ def create_user():
         rol = data.get('rol')
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
-        image = data.get('image')
+        image = data.get('imagen')
         email = data.get('email')
         
         # Validar categorías
