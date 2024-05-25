@@ -6,6 +6,7 @@ import certifi
 from bson import ObjectId
 from bson import json_util
 import json
+from comparacionCarasOffline import vectorizarImagen
 
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
@@ -123,7 +124,7 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image,
+            'image': vectorizarImagen(image),
             'email': email
         }}
     )
