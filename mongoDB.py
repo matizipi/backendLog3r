@@ -97,7 +97,11 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
     })
 
     if usuario_existente==None:
-             
+        '''try:
+            imagen = getEmbeddigs(image)
+        except Exception as e:
+            print(f"Error al abrir la imagen: {e}")'''
+       
         response = collection.insert_one({            
             'nombre': nombre,
             'apellido': apellido,
@@ -105,7 +109,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': vectorizarImagen(image),
+            'image': None,
             'email': email
         })       
         guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
@@ -226,11 +230,14 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
         
-def vectorizarImagen(imagen):    
-    posrostro_entrada=face_recognition.face_locations(imagen)[0]    
+def getEmbeddigs(imagen):    
+    posrostro_entrada=face_recognition.face_locations(imagen)[0]
+    if not posrostro_entrada:
+            # No se encontraron rostros en la imagen
+            raise ValueError("No se encontraron rostros en la imagen proporcionada")    
     vector_rostro_entrada=face_recognition.face_encodings(imagen,known_face_locations=[posrostro_entrada]) 
     
-    return vector_rostro_entrada.tolist()
+    return vector_rostro_entrada
 
 
 

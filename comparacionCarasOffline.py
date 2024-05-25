@@ -1,11 +1,12 @@
 import base64
 import io
-from tkinter import Image
 import cv2
 import numpy as np
 import face_recognition
 from mongoDB import searchMdb
 import math
+from PIL import Image
+
 ##Nivel local
 
 THRESHOLD=0.93
@@ -92,7 +93,10 @@ def imagenSinRostros(imagen):
 def obtener_imagen_desde_json(image_data):  
     # Decodificar la imagen de base64
     image_data = base64.b64decode(image_data)
-    image = Image.open(io.BytesIO(image_data))
+    try:
+        image = Image.open(io.BytesIO(image_data))
+    except Exception as e:
+        print(f"Error al abrir la imagen: {e}")   
 
     # Convertir la imagen a formato numpy array
     image_np = np.array(image)
