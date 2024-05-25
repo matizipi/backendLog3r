@@ -230,7 +230,7 @@ def vectorizarImagen(imagen):
     posrostro_entrada=face_recognition.face_locations(imagen)[0]    
     vector_rostro_entrada=face_recognition.face_encodings(imagen,known_face_locations=[posrostro_entrada]) 
     
-    return vector_rostro_entrada
+    return vector_rostro_entrada.tolist()
 
 
 

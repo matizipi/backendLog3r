@@ -1,3 +1,6 @@
+import base64
+import io
+from tkinter import Image
 import cv2
 import numpy as np
 import face_recognition
@@ -85,3 +88,14 @@ def imagenSinRostros(imagen):
     if(len(rostros)==0):
         return True
     return False
+
+def obtener_imagen_desde_json(image_data):  
+    # Decodificar la imagen de base64
+    image_data = base64.b64decode(image_data)
+    image = Image.open(io.BytesIO(image_data))
+
+    # Convertir la imagen a formato numpy array
+    image_np = np.array(image)
+
+    return image_np
+   
