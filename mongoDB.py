@@ -6,7 +6,6 @@ import certifi
 from bson import ObjectId
 from bson import json_util
 import json
-from comparacionCarasOffline import vectorizarImagen
 
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
@@ -226,6 +225,11 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
         
+def vectorizarImagen(imagen):    
+    posrostro_entrada=face_recognition.face_locations(imagen)[0]    
+    vector_rostro_entrada=face_recognition.face_encodings(imagen,known_face_locations=[posrostro_entrada]) 
+    
+    return vector_rostro_entrada
 
 
 
