@@ -28,38 +28,18 @@ def searchMdb():
     
 
     
-def unionPersonaEspacios(id):
-    result = db.usuarios.aggregate([
-        {
-        '$match': {
-            '_id': id  # Filtrar por el ID de la orden deseada
-        }
-    },
-    {
-        '$lookup': {
-            "from": "roles",
-            "localField": "rol",
-            "foreignField": "nombre",
-            "as": "rol_info"
-        }
-        
-    },{
-        '$project': {
-            
-            "_id": 1,
-            "label": 1,
-            "nombre": 1,
-            "apellido": 1,
-            "dni": 1,
-            "rol": 1,
-            "horariosEntrada": 1,
-            "horariosSalida": 1,
-            "image": 1,
-            "lugares": {"$first":"$rol_info.lugares"}
-        }
-    }
-])
-    return result
+def unionPersonaEspacios(user):
+    rolesCursor = db.roles.find({"nombre":{"$in":user["rol"]}})
+    lugares_set = set()
+    for doc in rolesCursor:
+        lugares_set.update(doc["lugares"])
+    lugares = list(lugares_set)
+
+    rolesCursor.close()
+
+    user["lugares"] = lugares
+
+    return user
 
 def registrarLog(horario,nombre,apellido,dni,estado,tipo):
     # Realizar operaciones con la base de datos MongoDB

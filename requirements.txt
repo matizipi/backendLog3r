@@ -10,3 +10,4 @@ Flask-Cors
 opencv-contrib-python
 face_recognition
 opencv-python-headless
+schedule
