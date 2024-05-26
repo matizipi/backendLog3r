@@ -1,4 +1,4 @@
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -97,6 +97,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
     })
 
     if usuario_existente==None:
+        image_list = vectorizarImagen(image)[0].tolist()
              
         response = collection.insert_one({            
             'nombre': nombre,
@@ -105,15 +106,18 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': vectorizarImagen(image)[0]
+            'image': image_list,
+            'email':email
         })       
-        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image_list)
     return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${response.inserted_id}',}
  
 
-def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
+def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     json_usuario_original = getUser(user_id) #obtengo usuario antes de modificarse
+    image_list = vectorizarImagen(image)[0].tolist()
+    #image_list = vectorizarImagen(image)[0].tolist() if vectorizarImagen(image)[0].tolist() != json_usuario_original['image'] else image
     result = collection.update_one(
         {'_id': ObjectId(user_id)},
         {'$set': {
@@ -123,7 +127,8 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image
+            'image': image_list,
+            'email':email
         }}
     )
     if result.modified_count > 0:
@@ -183,17 +188,18 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modifi
             campos_modificados[campo] = valor_actual
     
     collection = db['historial_usuarios']
-    response = collection.insert_one({            
-            'nombre': campos_modificados.get('nombre') if 'nombre' in  campos_modificados.keys else '',
-            'apellido': campos_modificados.get('apellido') if 'apellido' in  campos_modificados.keys else '',
-            'dni': int(campos_modificados.get('dni')) if 'dni' in  campos_modificados.keys else '',
-            'rol': campos_modificados.get('rol') if 'rol' in  campos_modificados.keys else '',
-            'horariosEntrada': campos_modificados.get('horariosEntrada') if 'horariosEntrada' in  campos_modificados.keys else '',
-            'horariosSalida': campos_modificados.get('horariosSalida') if 'horariosSalida' in  campos_modificados.keys else '',
-            'image': campos_modificados.get('image') if 'image' in  campos_modificados.keys else '',
-            'fechaDeCambio':time.now(),
-            'usuarioResponsable':''
-        })
+    response = collection.insert_one({
+        'nombre': campos_modificados.get('nombre'),
+        'apellido': campos_modificados.get('apellido'),
+        'dni': int(campos_modificados.get('dni')),
+        'rol': campos_modificados.get('rol'),
+        'horariosEntrada': campos_modificados.get('horariosEntrada'),
+        'horariosSalida': campos_modificados.get('horariosSalida'),
+        'image': campos_modificados.get('image'),
+        'email': campos_modificados.get('email'),
+        'fechaDeCambio': datetime.now(),
+        'usuarioResponsable': ''
+    })
     return campos_modificados
 
 def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
@@ -206,7 +212,7 @@ def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horari
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
             'image': image,
-            'fechaDeCambio':time.now(),
+            'fechaDeCambio':datetime.now(),
             'usuarioResponsable':''
         })
 def normalizarDatosEnLogs(json_usuario_original,cambios): 
