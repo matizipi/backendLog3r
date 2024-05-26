@@ -117,7 +117,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
 def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     json_usuario_original = getUser(user_id) #obtengo usuario antes de modificarse
-    if isinstance(data, list):
+    if isinstance(image, list)==False:
         image = vectorizarImagen(image)[0].tolist()    
     result = collection.update_one(
         {'_id': ObjectId(user_id)},
