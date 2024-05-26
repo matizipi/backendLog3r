@@ -146,7 +146,7 @@ def update_user(user_id):
         image = request.files['image']
         email = data.get('email')        
         # Convertir la imagen a un formato adecuado para el procesamiento
-        if (isinstance(image, np.ndarray)==False):
+        if isinstance(data, list):
             image = cv2.imdecode(np.frombuffer(image.read(), np.uint8), cv2.IMREAD_UNCHANGED)      
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
