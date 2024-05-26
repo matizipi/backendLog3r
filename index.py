@@ -79,15 +79,20 @@ def login():
 
 @app.route('/api/day/logs', methods=['GET'])
 def get_logs():
-    data = request.json      
+    fecha_str = request.args.get('fecha')
+    if not fecha_str:
+        return jsonify({'error': 'Falta el parámetro fecha'}), 400
+    
     try:
-        fecha = data.get('fecha')
+        # Convertir la fecha de cadena a objeto datetime
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d')
+        print(f"Fecha recibida: {fecha}")  # Depuración
         result = obtener_logs_dia_especifico(fecha)
-        return result, 200
+        return jsonify(result), 200  # Asegurar que se devuelve como JSON
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
-
+    
 @app.route('/api/authentication/logs', methods=['POST'])
 def logs():
     data = request.form    

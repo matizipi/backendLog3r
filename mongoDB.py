@@ -6,7 +6,6 @@ import certifi
 from bson import ObjectId
 from bson import json_util
 import json
-import face_recognition
 
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
@@ -97,11 +96,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
     })
 
     if usuario_existente==None:
-        '''try:
-            imagen = getEmbeddigs(image)
-        except Exception as e:
-            print(f"Error al abrir la imagen: {e}")'''
-       
+             
         response = collection.insert_one({            
             'nombre': nombre,
             'apellido': apellido,
@@ -109,14 +104,14 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': None,
-            'email': email
-        })       
-        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+            'image': image
+        })
+        label = collection.find_one({ '_id': response.inserted_id }, { 'label': 1, '_id': 0 })
+        guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
     return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${response.inserted_id}',}
  
 
-def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image, email):
+def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
     collection = db['usuarios']
     json_usuario_original = getUser(user_id) #obtengo usuario antes de modificarse
     result = collection.update_one(
@@ -128,14 +123,14 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image,
-            'email': email
+            'image': image
         }}
     )
     if result.modified_count > 0:
-        json_usuario_modificado = getUser(user_id) #obtengo usuario modificado       
-        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
-        normalizarDatosEnLogs(json_usuario_original,campos_modificados)
+        json_usuario_modificado = getUser(user_id) #obtengo usuario modificado        
+        label = collection.find_one({ '_id': ObjectId(user_id)}, { 'label': 1, '_id': 0 })
+        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado)
+        normalizarDatosEnLogs(campos_modificados,label)
     return {'mensaje': 'Usuario actualizado' if result.modified_count > 0 else 'No se realizaron cambios'}
 
 def deleteUser(user_id):
@@ -154,16 +149,17 @@ def obtener_logs_dia_especifico(fecha):
     client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
     db = client.get_database()
     collection = db['logs']
-
+    
     # Convertir la fecha en un rango de inicio y fin del día
-    fecha_inicio = datetime.combine(fecha, datetime.min.time()) #la hora mínima (00:00:00).
+    fecha_inicio = datetime.combine(fecha, datetime.min.time())
     fecha_fin = fecha_inicio + timedelta(days=1)
+    print(f"Rango de fecha: {fecha_inicio} - {fecha_fin}")  # Depuración
 
     # Pipeline de agregación
     pipeline = [
         {
             '$match': {
-                'timestamp': {
+                'horario': {
                     '$gte': fecha_inicio,
                     '$lt': fecha_fin
                 }
@@ -173,11 +169,15 @@ def obtener_logs_dia_especifico(fecha):
 
     # Ejecutar el pipeline
     resultados = list(collection.aggregate(pipeline))
+    print(f"Resultados encontrados: {resultados}")  # Depuración
 
-    # Convertir los resultados a JSON
-    resultados_json = json.dumps(resultados, default=str)
+    # Convertir los resultados a un formato adecuado para JSON
+    resultados_json = []
+    for resultado in resultados:
+        resultado['_id'] = str(resultado['_id'])  # Convertir ObjectId a string
+        resultados_json.append(resultado)
 
-    return resultados_json
+    return resultados_json  # Devolver como una lista de diccionarios
 
 def getUsers():
     collection = db['usuarios']
@@ -185,7 +185,7 @@ def getUsers():
     users = list(cursor)
     return json.loads(json_util.dumps(users))
 
-def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado):
+def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado):
      # Lista para almacenar los campos modificados
     campos_modificados = {}
 
@@ -195,7 +195,8 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modifi
             campos_modificados[campo] = valor_actual
     
     collection = db['historial_usuarios']
-    response = collection.insert_one({            
+    response = collection.insert_one({
+            'label':label,
             'nombre': campos_modificados.get('nombre') if 'nombre' in  campos_modificados.keys else '',
             'apellido': campos_modificados.get('apellido') if 'apellido' in  campos_modificados.keys else '',
             'dni': int(campos_modificados.get('dni')) if 'dni' in  campos_modificados.keys else '',
@@ -203,14 +204,15 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modifi
             'horariosEntrada': campos_modificados.get('horariosEntrada') if 'horariosEntrada' in  campos_modificados.keys else '',
             'horariosSalida': campos_modificados.get('horariosSalida') if 'horariosSalida' in  campos_modificados.keys else '',
             'image': campos_modificados.get('image') if 'image' in  campos_modificados.keys else '',
-            'fechaDeCambio':datetime.now(),
+            'fechaDeCambio':time.now(),
             'usuarioResponsable':''
         })
     return campos_modificados
 
-def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
+def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
     collection = db['historial_usuarios']
-    result = collection.insert_one({            
+    result = collection.insert_one({
+            'label':label,
             'nombre': nombre,
             'apellido': apellido,
             'dni': int(dni),
@@ -218,26 +220,17 @@ def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horari
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
             'image': image,
-            'fechaDeCambio':datetime.now(),
+            'fechaDeCambio':time.now(),
             'usuarioResponsable':''
         })
-def normalizarDatosEnLogs(json_usuario_original,cambios): 
-    dni = json_usuario_original.get('dni')
+def normalizarDatosEnLogs(cambios,label): 
     logs = db['logs']   
-    filtro = {'dni': dni}           
+    filtro = {'label': label}           
     actualizacion = {'$set': cambios}
 
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
         
-def getEmbeddigs(imagen):    
-    posrostro_entrada=face_recognition.face_locations(imagen)[0]
-    if not posrostro_entrada:
-            # No se encontraron rostros en la imagen
-            raise ValueError("No se encontraron rostros en la imagen proporcionada")    
-    vector_rostro_entrada=face_recognition.face_encodings(imagen,known_face_locations=[posrostro_entrada]) 
-    
-    return vector_rostro_entrada
 
 
 
