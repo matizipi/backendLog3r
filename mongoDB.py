@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+import numpy as np
 from pymongo import MongoClient
 import certifi
 from bson import ObjectId
@@ -116,8 +117,8 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
 def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     json_usuario_original = getUser(user_id) #obtengo usuario antes de modificarse
-    image_list = vectorizarImagen(image)[0].tolist()
-    #image_list = vectorizarImagen(image)[0].tolist() if vectorizarImagen(image)[0].tolist() != json_usuario_original['image'] else image
+    if (isinstance(image, np.ndarray)==False):
+        image = vectorizarImagen(image)[0].tolist()    
     result = collection.update_one(
         {'_id': ObjectId(user_id)},
         {'$set': {
@@ -127,7 +128,7 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image_list,
+            'image': image,
             'email':email
         }}
     )

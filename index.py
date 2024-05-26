@@ -143,11 +143,11 @@ def update_user(user_id):
         rol = data.get('rol')
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
-        file = request.files['image']
+        image = request.files['image']
         email = data.get('email')        
         # Convertir la imagen a un formato adecuado para el procesamiento
-        image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)        
-       
+        if (isinstance(image, np.ndarray)==False):
+            image = cv2.imdecode(np.frombuffer(image.read(), np.uint8), cv2.IMREAD_UNCHANGED)      
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
