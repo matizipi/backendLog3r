@@ -105,7 +105,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': vectorizarImagen(image)
+            'image': vectorizarImagen(image)[0]
         })       
         guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
     return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${response.inserted_id}',}
@@ -142,22 +142,18 @@ def getUser(user_id):
     user = collection.find_one({'_id': ObjectId(user_id)})
     return json.loads(json_util.dumps(user))
 
-def obtener_logs_dia_especifico(fecha):
-    load_dotenv()
-    MONGO_URI = os.getenv('MONGO_URI')
-    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
-    db = client.get_database()
+def obtener_logs_dia_especifico(fecha):    
     collection = db['logs']
-
+    
     # Convertir la fecha en un rango de inicio y fin del día
-    fecha_inicio = datetime.combine(fecha, datetime.min.time()) #la hora mínima (00:00:00).
+    fecha_inicio = datetime.combine(fecha, datetime.min.time())
     fecha_fin = fecha_inicio + timedelta(days=1)
-
+  
     # Pipeline de agregación
     pipeline = [
         {
             '$match': {
-                'timestamp': {
+                'horario': {
                     '$gte': fecha_inicio,
                     '$lt': fecha_fin
                 }
@@ -167,10 +163,8 @@ def obtener_logs_dia_especifico(fecha):
 
     # Ejecutar el pipeline
     resultados = list(collection.aggregate(pipeline))
-
     # Convertir los resultados a JSON
     resultados_json = json.dumps(resultados, default=str)
-
     return resultados_json
 
 def getUsers():
@@ -224,12 +218,22 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
         
-def vectorizarImagen(imagen):    
-    posrostro_entrada=face_recognition.face_locations(imagen)[0]    
-    vector_rostro_entrada=face_recognition.face_encodings(imagen,known_face_locations=[posrostro_entrada]) 
-    
-    return vector_rostro_entrada
-
+def vectorizarImagen(imagen):
+    try:
+        # Encontrar la ubicación del rostro en la imagen
+        posrostro_entrada = face_recognition.face_locations(imagen)[0]
+        if not posrostro_entrada:
+            # No se encontró ningún rostro en la imagen
+            return None
+        
+        # Obtener los embeddings del primer rostro encontrado        
+        vector_rostro_entrada = face_recognition.face_encodings(imagen, known_face_locations=[posrostro_entrada])        
+        if vector_rostro_entrada:
+            return vector_rostro_entrada
+        else:
+            return None
+    except Exception as e:
+         print(f"Error procesando la imagen: {e}")
 
 if __name__== "__main__":
    

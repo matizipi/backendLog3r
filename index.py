@@ -109,20 +109,21 @@ def launch_script_automatic_log():
     )
 @app.route('/api/users', methods=['POST'])
 def create_user():
-    data = request.json
-    try:
+    data = request.form
+    try:        
         nombre = data.get('nombre')
         apellido = data.get('apellido')
         dni = data.get('dni')
         rol = data.get('rol')
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
-        image = data.get('image')
-        email = data.get('email')
-        
+        file = request.files['imagen']
+        email = data.get('email')        
+        # Convertir la imagen a un formato adecuado para el procesamiento
+        image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)        
         # Validar categorías
-        if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
-            return jsonify({"error": "Rol no válido"}), 400
+        #if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
+        #    return jsonify({"error": "Rol no válido"}), 400
         
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
@@ -172,13 +173,18 @@ def delete_user(user_id):
 
 @app.route('/api/day/logs', methods=['GET'])
 def get_logs():
-    data = request.json      
+    data = request.form
     try:
-        fecha = data.get('fecha')
+        fecha_str = data.get('fecha')  
+        
+        # Convertir la fecha del string al objeto datetime
+        fecha = datetime.strptime(fecha_str, "%Y-%m-%d")
+
         result = obtener_logs_dia_especifico(fecha)
         return result, 200
     except Exception as e:
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        mensaje_error = f"Error interno en el servidor: {str(e)}"
+        print(mensaje_error)
         return jsonify({'error': mensaje_error}), 500
     
     
