@@ -2,3 +2,4 @@ __pycache__/
 log3r/
 .env
 /__pycache__
+/.idea
