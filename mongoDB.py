@@ -84,7 +84,10 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
         'dni':int(dni),
         'estado':estado,
         'tipo':tipo})
-    
+
+    # Extract the inserted_id from the result
+    inserted_id = response.inserted_id
+
     result = {
         'id': str(response.inserted_id),
         'horario':horario,
@@ -94,7 +97,7 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
         'estado':estado,
         'tipo':tipo
     }
-    return result   
+    return result
 
 def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
