@@ -103,8 +103,8 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
     usuario_existente = collection.find_one({'$or': [{'dni': dni},{'email': email}]
     })
 
-    if usuario_existente==None:
-        image_list = vectorizarImagen(image)[0].tolist()
+    if usuario_existente ==None:
+        image = vectorizarImagen(image)[0].tolist()
              
         response = collection.insert_one({            
             'nombre': nombre,
@@ -113,10 +113,10 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image_list,
+            'image': image,
             'email':email
         })       
-        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image_list)
+        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
         str_Id = str(response.inserted_id)
     return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${str_Id}',}
  
@@ -201,7 +201,7 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modifi
         if campo in json_usuario_original and json_usuario_original[campo] != valor_actual:
             campos_modificados[campo] = valor_actual
     
-    dni = campos_modificados.get('rol') if campos_modificados.get('rol') else None
+    dni = campos_modificados.get('dni') if campos_modificados.get('dni') else None
     collection = db['historial_usuarios']
     response = collection.insert_one({
         'nombre': campos_modificados.get('nombre'),
@@ -217,10 +217,9 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modifi
     })
     return campos_modificados
 
-def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
+def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
     collection = db['historial_usuarios']
-    result = collection.insert_one({
-            'label':label,
+    result = collection.insert_one({            
             'nombre': nombre,
             'apellido': apellido,
             'dni': int(dni),
