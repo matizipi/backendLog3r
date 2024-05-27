@@ -1,11 +1,16 @@
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+import numpy as np
 from pymongo import MongoClient
 import certifi
 from bson import ObjectId
 from bson import json_util
 import json
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import face_recognition
 
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
@@ -76,6 +81,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
     })
 
     if usuario_existente==None:
+        image_list = vectorizarImagen(image)[0].tolist()
              
         response = collection.insert_one({            
             'nombre': nombre,
@@ -84,15 +90,18 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image
+            'image': image_list,
+            'email':email
         })       
-        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image_list)
     return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${response.inserted_id}',}
  
 
-def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
+def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     json_usuario_original = getUser(user_id) #obtengo usuario antes de modificarse
+    if isinstance(image, list)==False:
+        image = vectorizarImagen(image)[0].tolist()    
     result = collection.update_one(
         {'_id': ObjectId(user_id)},
         {'$set': {
@@ -102,13 +111,18 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image
+            'image': image,
+            'email':email
         }}
     )
     if result.modified_count > 0:
-        json_usuario_modificado = getUser(user_id) #obtengo usuario modificado       
-        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
-        normalizarDatosEnLogs(json_usuario_original,campos_modificados)
+
+        json_usuario_modificado = getUser(user_id) #obtengo usuario modificado        
+        label = collection.find_one({ '_id': ObjectId(user_id)}, { 'label': 1, '_id': 0 })
+        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado)
+        normalizarDatosEnLogs(campos_modificados,label)
+        notificarAlPersonalJerarquico(json_usuario_original,json_usuario_modificado)
+
     return {'mensaje': 'Usuario actualizado' if result.modified_count > 0 else 'No se realizaron cambios'}
 
 def deleteUser(user_id):
@@ -121,22 +135,19 @@ def getUser(user_id):
     user = collection.find_one({'_id': ObjectId(user_id)})
     return json.loads(json_util.dumps(user))
 
-def obtener_logs_dia_especifico(fecha):
-    load_dotenv()
-    MONGO_URI = os.getenv('MONGO_URI')
-    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
-    db = client.get_database()
+def obtener_logs_dia_especifico(fecha):    
     collection = db['logs']
-
+    
     # Convertir la fecha en un rango de inicio y fin del día
-    fecha_inicio = datetime.combine(fecha, datetime.min.time()) #la hora mínima (00:00:00).
+    fecha_inicio = datetime.combine(fecha, datetime.min.time())
     fecha_fin = fecha_inicio + timedelta(days=1)
+    #print(f"Rango de fecha: {fecha_inicio} - {fecha_fin}")  # Depuración
 
     # Pipeline de agregación
     pipeline = [
         {
             '$match': {
-                'timestamp': {
+                'horario': {
                     '$gte': fecha_inicio,
                     '$lt': fecha_fin
                 }
@@ -146,11 +157,15 @@ def obtener_logs_dia_especifico(fecha):
 
     # Ejecutar el pipeline
     resultados = list(collection.aggregate(pipeline))
+    print(f"Resultados encontrados: {resultados}")  # Depuración
 
-    # Convertir los resultados a JSON
-    resultados_json = json.dumps(resultados, default=str)
+    # Convertir los resultados a un formato adecuado para JSON
+    resultados_json = []
+    for resultado in resultados:
+        resultado['_id'] = str(resultado['_id'])  # Convertir ObjectId a string
+        resultados_json.append(resultado)
 
-    return resultados_json
+    return resultados_json  # Devolver como una lista de diccionarios
 
 def getUsers():
     collection = db['usuarios']
@@ -158,7 +173,7 @@ def getUsers():
     users = list(cursor)
     return json.loads(json_util.dumps(users))
 
-def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado):
+def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado):
      # Lista para almacenar los campos modificados
     campos_modificados = {}
 
@@ -168,22 +183,24 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modifi
             campos_modificados[campo] = valor_actual
     
     collection = db['historial_usuarios']
-    response = collection.insert_one({            
-            'nombre': campos_modificados.get('nombre') if 'nombre' in  campos_modificados.keys else '',
-            'apellido': campos_modificados.get('apellido') if 'apellido' in  campos_modificados.keys else '',
-            'dni': int(campos_modificados.get('dni')) if 'dni' in  campos_modificados.keys else '',
-            'rol': campos_modificados.get('rol') if 'rol' in  campos_modificados.keys else '',
-            'horariosEntrada': campos_modificados.get('horariosEntrada') if 'horariosEntrada' in  campos_modificados.keys else '',
-            'horariosSalida': campos_modificados.get('horariosSalida') if 'horariosSalida' in  campos_modificados.keys else '',
-            'image': campos_modificados.get('image') if 'image' in  campos_modificados.keys else '',
-            'fechaDeCambio':time.now(),
-            'usuarioResponsable':''
-        })
+    response = collection.insert_one({
+        'nombre': campos_modificados.get('nombre'),
+        'apellido': campos_modificados.get('apellido'),
+        'dni': int(campos_modificados.get('dni')),
+        'rol': campos_modificados.get('rol'),
+        'horariosEntrada': campos_modificados.get('horariosEntrada'),
+        'horariosSalida': campos_modificados.get('horariosSalida'),
+        'image': campos_modificados.get('image'),
+        'email': campos_modificados.get('email'),
+        'fechaDeCambio': datetime.now(),
+        'usuarioResponsable': ''
+    })
     return campos_modificados
 
-def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
+def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
     collection = db['historial_usuarios']
-    result = collection.insert_one({            
+    result = collection.insert_one({
+            'label':label,
             'nombre': nombre,
             'apellido': apellido,
             'dni': int(dni),
@@ -191,20 +208,86 @@ def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horari
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
             'image': image,
-            'fechaDeCambio':time.now(),
+            'fechaDeCambio':datetime.now(),
             'usuarioResponsable':''
         })
-def normalizarDatosEnLogs(json_usuario_original,cambios): 
-    dni = json_usuario_original.get('dni')
+def normalizarDatosEnLogs(cambios,label): 
     logs = db['logs']   
-    filtro = {'dni': dni}           
+    filtro = {'label': label}           
     actualizacion = {'$set': cambios}
 
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
+
+def notificarAlPersonalJerarquico(json_usuario_original,json_usuario_modificado):
+    asunto="Notificación sobre cambio de titularidad"
+    collection = db['usuarios']
+    personal_jerarquico = collection.find({"rol": "personal jerárquico"})
+    emails = [user['email'] for user in personal_jerarquico]
+
+    mensaje=generar_cuerpo_del_correo(json_usuario_original,json_usuario_modificado)
+
+    for email in emails:
+        send_email(email, asunto, mensaje)
+
+
+def generar_cuerpo_del_correo(original, modificado):
+    cambios = []
+    for key in original:
+        if key in modificado and original[key] != modificado[key]:
+            cambios.append(f"{key}: {original[key]} -> {modificado[key]}")
+    
+    if not cambios:
+        return "No se han realizado modificaciones."
+    
+    cuerpo = "Se han realizado los siguientes cambios en la información del usuario:\n\n"
+    cuerpo += "\n".join(cambios)
+    return cuerpo
+
+def send_email(to_email, subject, message):
+
+    smtp_server = 'smtp.gmail.com'
+    smtp_port = 587
+    smtp_user = 'log3rapp@gmail.com'
+    smtp_password = 'log3rAlpha'
+
+    # Configuración del mensaje
+    msg = MIMEMultipart()
+    msg['From'] = smtp_user
+    msg['To'] = to_email
+    msg['Subject'] = subject
+
+    # Adjuntar el cuerpo del mensaje
+    msg.attach(MIMEText(message, 'plain'))
+
+    # Conectar al servidor SMTP y enviar el correo
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.sendmail(smtp_user, to_email, msg.as_string())
+        server.quit()
+        print(f'Correo enviado a {to_email}')
+    except Exception as e:
+        print(f'Error al enviar el correo a {to_email}: {e}')
+
         
-
-
+def vectorizarImagen(imagen):
+    try:
+        # Encontrar la ubicación del rostro en la imagen
+        posrostro_entrada = face_recognition.face_locations(imagen)[0]
+        if not posrostro_entrada:
+            # No se encontró ningún rostro en la imagen
+            return None
+        
+        # Obtener los embeddings del primer rostro encontrado        
+        vector_rostro_entrada = face_recognition.face_encodings(imagen, known_face_locations=[posrostro_entrada])        
+        if vector_rostro_entrada:
+            return vector_rostro_entrada
+        else:
+            return None
+    except Exception as e:
+         print(f"Error procesando la imagen: {e}")
 
 if __name__== "__main__":
    
