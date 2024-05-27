@@ -1,18 +1,23 @@
+import base64
+import io
 import cv2
 import numpy as np
 import face_recognition
-from mongoDB import searchMdb
+from mongoDB import searchMdb,leerTHRESHOLD,insertarTHRESHOLD, getUserByObjectid, getImageEmbeddings
 import math
+from datetime import datetime
+
+
 ##Nivel local
 
-THRESHOLD=0.93
+THRESHOLD=leerTHRESHOLD()
 imageSize=(150,150)
 
 vectoresLocales=[]
 labels=[]
   
 def compararConDB(image_entrada):
-    if(imagenSinRostros(image_entrada)):
+    if imagenSinRostros(image_entrada):
         return -1
     
     cursor=searchMdb()
@@ -20,18 +25,46 @@ def compararConDB(image_entrada):
     max_similitude=0
     entrada=vectorizarImagen(image_entrada)[0]
     for user in cursor:
-        
-        aux=calculateCosineSimilarity(entrada,user["image"])
-        #print(aux)
-        if(aux>max_similitude and aux>THRESHOLD):
-            max_user_similitude=user
-            max_similitude=aux
+
+        embeddings_db = user['image']
+        #check if empty
+        if len(embeddings_db) > 0:
+
+            aux=calculateCosineSimilarity(entrada,embeddings_db)
+            #print(aux)
+            if(aux>max_similitude and aux>THRESHOLD):
+                max_user_similitude=user
+                max_similitude=aux
     
     cursor.close()
     return max_user_similitude
 
 
-    
+def compararEmbeddingConDB(embedding_input):
+    if len(embedding_input) < 1:
+        return -1
+
+    user = -1
+    cursor = getImageEmbeddings()
+    max_imagen_similitude = -1
+    max_similitude = 0
+    for imagen in cursor:
+
+        embeddings_db = imagen['embedding']
+        # check if empty
+        if len(embeddings_db) == len(embedding_input):
+
+            aux = calculateCosineSimilarity(embedding_input, embeddings_db)
+            # print(aux)
+            if (aux > max_similitude and aux > THRESHOLD):
+                max_imagen_similitude = imagen
+                max_similitude = aux
+
+    cursor.close()
+    if(max_imagen_similitude != -1):
+        print(max_imagen_similitude)
+        user = getUserByObjectid(max_imagen_similitude['userId'])
+    return user
 
 
 
@@ -39,8 +72,8 @@ def calculateCosineSimilarity(embeddings1,embeddings2):
     dotProduct = 0.0
     norm1 = 0.0
     norm2 = 0.0
-    
-   
+
+
     for i in range((len(embeddings1))): 
         
         dotProduct += embeddings1[i] * embeddings2[i]
@@ -83,5 +116,32 @@ def imagenSinRostros(imagen):
     rostros=face_recognition.face_locations(imagen)
     #print(rostros)
     if(len(rostros)==0):
+        return True
+    return False
+
+def obtener_imagen_desde_json(image_data):  
+    # Decodificar la imagen de base64
+    image_data = base64.b64decode(image_data)
+    try:
+        image = Image.open(io.BytesIO(image_data))
+    except Exception as e:
+        print(f"Error al abrir la imagen: {e}")   
+
+    # Convertir la imagen a formato numpy array
+    image_np = np.array(image)
+
+    return image_np
+   
+
+def getTHRESHOLD():
+    return str(THRESHOLD)
+
+def setTHRESHOLD(nuevo_umbral):
+    global THRESHOLD
+    nuevo_umbral=float(nuevo_umbral)
+    
+    if(nuevo_umbral>=0 and nuevo_umbral<=1):
+        insertarTHRESHOLD(nuevo_umbral)
+        THRESHOLD=nuevo_umbral
         return True
     return False

@@ -9,6 +9,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir dlib p
 RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir opencv-contrib-python
 RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir face_recognition
 RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir opencv-python-headless
+RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir schedule
 
 COPY . .
 
