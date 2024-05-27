@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import numpy as np
 from pymongo import MongoClient, ASCENDING
 import certifi
+from bson.objectid import ObjectId
 from bson import ObjectId
 from bson import json_util
 import json
@@ -27,12 +28,32 @@ db = client[MONGO_DB]
 def searchMdb():
     # Realizar operaciones con la base de datos MongoDB
     # Por ejemplo, puedes obtener una colección y devolver algunos documentos
-    collection = db['usuarios']    
+    collection = db['usuarios']
     filtro = {}
     cursor = collection.find(filtro)
     return cursor
-    
 
+def getImageEmbeddings():
+    # Realizar operaciones con la base de datos MongoDB
+    # Por ejemplo, puedes obtener una colección y devolver algunos documentos
+    collection = db['imagenes']
+    filtro = {}
+    cursor = collection.find(filtro)
+    return cursor
+
+
+# Function to get user by ObjectId
+def getUserByObjectid(object_id):
+    try:
+        # Access the collection
+        collection = db['usuarios']
+
+        # Find the user
+        user = collection.find_one({"_id": object_id})
+        return user
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
     
 def unionPersonaEspacios(user):
     rolesCursor = db.roles.find({"nombre":{"$in":user["rol"]}})
