@@ -1,11 +1,13 @@
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+import numpy as np
 from pymongo import MongoClient
 import certifi
 from bson import ObjectId
 from bson import json_util
 import json
+import face_recognition
 
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
@@ -76,6 +78,7 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
     })
 
     if usuario_existente==None:
+        image_list = vectorizarImagen(image)[0].tolist()
              
         response = collection.insert_one({            
             'nombre': nombre,
@@ -84,16 +87,18 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image
-        })
-        label = collection.find_one({ '_id': response.inserted_id }, { 'label': 1, '_id': 0 })
-        guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+            'image': image_list,
+            'email':email
+        })       
+        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image_list)
     return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${response.inserted_id}',}
  
 
-def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
+def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     json_usuario_original = getUser(user_id) #obtengo usuario antes de modificarse
+    if isinstance(image, list)==False:
+        image = vectorizarImagen(image)[0].tolist()    
     result = collection.update_one(
         {'_id': ObjectId(user_id)},
         {'$set': {
@@ -103,7 +108,8 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image
+            'image': image,
+            'email':email
         }}
     )
     if result.modified_count > 0:
@@ -123,17 +129,13 @@ def getUser(user_id):
     user = collection.find_one({'_id': ObjectId(user_id)})
     return json.loads(json_util.dumps(user))
 
-def obtener_logs_dia_especifico(fecha):
-    load_dotenv()
-    MONGO_URI = os.getenv('MONGO_URI')
-    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
-    db = client.get_database()
+def obtener_logs_dia_especifico(fecha):    
     collection = db['logs']
     
     # Convertir la fecha en un rango de inicio y fin del día
     fecha_inicio = datetime.combine(fecha, datetime.min.time())
     fecha_fin = fecha_inicio + timedelta(days=1)
-    print(f"Rango de fecha: {fecha_inicio} - {fecha_fin}")  # Depuración
+    #print(f"Rango de fecha: {fecha_inicio} - {fecha_fin}")  # Depuración
 
     # Pipeline de agregación
     pipeline = [
@@ -176,17 +178,17 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_
     
     collection = db['historial_usuarios']
     response = collection.insert_one({
-            'label':label,
-            'nombre': campos_modificados.get('nombre') if 'nombre' in  campos_modificados.keys else '',
-            'apellido': campos_modificados.get('apellido') if 'apellido' in  campos_modificados.keys else '',
-            'dni': int(campos_modificados.get('dni')) if 'dni' in  campos_modificados.keys else '',
-            'rol': campos_modificados.get('rol') if 'rol' in  campos_modificados.keys else '',
-            'horariosEntrada': campos_modificados.get('horariosEntrada') if 'horariosEntrada' in  campos_modificados.keys else '',
-            'horariosSalida': campos_modificados.get('horariosSalida') if 'horariosSalida' in  campos_modificados.keys else '',
-            'image': campos_modificados.get('image') if 'image' in  campos_modificados.keys else '',
-            'fechaDeCambio':time.now(),
-            'usuarioResponsable':''
-        })
+        'nombre': campos_modificados.get('nombre'),
+        'apellido': campos_modificados.get('apellido'),
+        'dni': int(campos_modificados.get('dni')),
+        'rol': campos_modificados.get('rol'),
+        'horariosEntrada': campos_modificados.get('horariosEntrada'),
+        'horariosSalida': campos_modificados.get('horariosSalida'),
+        'image': campos_modificados.get('image'),
+        'email': campos_modificados.get('email'),
+        'fechaDeCambio': datetime.now(),
+        'usuarioResponsable': ''
+    })
     return campos_modificados
 
 def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
@@ -200,7 +202,7 @@ def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, 
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
             'image': image,
-            'fechaDeCambio':time.now(),
+            'fechaDeCambio':datetime.now(),
             'usuarioResponsable':''
         })
 def normalizarDatosEnLogs(cambios,label): 
@@ -211,8 +213,22 @@ def normalizarDatosEnLogs(cambios,label):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
         
-
-
+def vectorizarImagen(imagen):
+    try:
+        # Encontrar la ubicación del rostro en la imagen
+        posrostro_entrada = face_recognition.face_locations(imagen)[0]
+        if not posrostro_entrada:
+            # No se encontró ningún rostro en la imagen
+            return None
+        
+        # Obtener los embeddings del primer rostro encontrado        
+        vector_rostro_entrada = face_recognition.face_encodings(imagen, known_face_locations=[posrostro_entrada])        
+        if vector_rostro_entrada:
+            return vector_rostro_entrada
+        else:
+            return None
+    except Exception as e:
+         print(f"Error procesando la imagen: {e}")
 
 if __name__== "__main__":
    

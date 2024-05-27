@@ -55,6 +55,7 @@ def predict():
     except Exception as e:
         # If an error occurs, return a 500 HTTP status code and an error message
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        print(mensaje_error)
         return jsonify({'error': mensaje_error}), 500
 
 @app.route('/api/login', methods=['POST'])
@@ -121,21 +122,19 @@ def launch_script_automatic_log():
     )
 @app.route('/api/users', methods=['POST'])
 def create_user():
-    data = request.json
-    try:
+    data = request.form
+    try:        
         nombre = data.get('nombre')
         apellido = data.get('apellido')
         dni = data.get('dni')
         rol = data.get('rol')
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
-        image = data.get('imagen')
-        email = data.get('email')
-        image_np = comparacionCarasOffline.obtener_imagen_desde_json(image)
-        # Validar categorías
-        #if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
-        #    return jsonify({"error": "Rol no válido"}), 400
-        
+        file = request.files['image']
+        email = data.get('email')        
+        # Convertir la imagen a un formato adecuado para el procesamiento
+        image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)        
+       
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
@@ -148,32 +147,29 @@ def create_user():
 
 @app.route('/api/users/<user_id>', methods=['PUT'])
 def update_user(user_id):
-    data = request.json
-    try:
+    data = request.form
+    try:        
         nombre = data.get('nombre')
         apellido = data.get('apellido')
         dni = data.get('dni')
         rol = data.get('rol')
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
-        image = data.get('image')
-        email = data.get('email')
-
-        # Validar categorías
-        if rol not in ['Estudiante', 'Docente', 'No Docente', 'Seguridad']:
-            return jsonify({"error": "Rol no válido"}), 400
-        
+        image = request.files['image']
+        email = data.get('email')        
+        # Convertir la imagen a un formato adecuado para el procesamiento
+        if isinstance(data, list)==False:
+            image = cv2.imdecode(np.frombuffer(image.read(), np.uint8), cv2.IMREAD_UNCHANGED)      
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
         
-        result = updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email)
+        result = updateUser(user_id,nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email)
         return jsonify(result), 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
-
-
+   
 @app.route('/api/users/<user_id>', methods=['DELETE'])
 def delete_user(user_id):
     try:
@@ -182,6 +178,7 @@ def delete_user(user_id):
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
+    
 
 @app.route('/api/users', methods=['GET'])
 def get_users():
