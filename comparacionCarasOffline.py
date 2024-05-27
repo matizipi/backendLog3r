@@ -1,12 +1,16 @@
+import base64
+import io
 import cv2
 import numpy as np
 import face_recognition
-from mongoDB import searchMdb, getUserByObjectid, getImageEmbeddings
-
+from mongoDB import searchMdb,leerTHRESHOLD,insertarTHRESHOLD, getUserByObjectid, getImageEmbeddings
 import math
+from datetime import datetime
+
+
 ##Nivel local
 
-THRESHOLD=0.93
+THRESHOLD=leerTHRESHOLD()
 imageSize=(150,150)
 
 vectoresLocales=[]
@@ -112,5 +116,32 @@ def imagenSinRostros(imagen):
     rostros=face_recognition.face_locations(imagen)
     #print(rostros)
     if(len(rostros)==0):
+        return True
+    return False
+
+def obtener_imagen_desde_json(image_data):  
+    # Decodificar la imagen de base64
+    image_data = base64.b64decode(image_data)
+    try:
+        image = Image.open(io.BytesIO(image_data))
+    except Exception as e:
+        print(f"Error al abrir la imagen: {e}")   
+
+    # Convertir la imagen a formato numpy array
+    image_np = np.array(image)
+
+    return image_np
+   
+
+def getTHRESHOLD():
+    return str(THRESHOLD)
+
+def setTHRESHOLD(nuevo_umbral):
+    global THRESHOLD
+    nuevo_umbral=float(nuevo_umbral)
+    
+    if(nuevo_umbral>=0 and nuevo_umbral<=1):
+        insertarTHRESHOLD(nuevo_umbral)
+        THRESHOLD=nuevo_umbral
         return True
     return False
