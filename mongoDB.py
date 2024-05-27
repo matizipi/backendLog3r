@@ -12,6 +12,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import face_recognition
+import cv2
 
 
 # Configuración de la conexión a MongoDB
@@ -83,10 +84,7 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
         'apellido':apellido,
         'dni':int(dni),
         'estado':estado,
-        'tipo':tipo})
-
-    # Extract the inserted_id from the result
-    inserted_id = response.inserted_id
+        'tipo':tipo})    
 
     result = {
         'id': str(response.inserted_id),
@@ -119,14 +117,14 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'email':email
         })       
         guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image_list)
-    return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${response.inserted_id}',}
+        str_Id = str(response.inserted_id)
+    return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${str_Id}',}
  
 
 def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     json_usuario_original = getUser(user_id) #obtengo usuario antes de modificarse
-    if isinstance(image, list)==False:
-        image = vectorizarImagen(image)[0].tolist()    
+    image = vectorizarImagen(image)[0].tolist()          
     result = collection.update_one(
         {'_id': ObjectId(user_id)},
         {'$set': {
@@ -141,13 +139,9 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
         }}
     )
     if result.modified_count > 0:
-
-        json_usuario_modificado = getUser(user_id) #obtengo usuario modificado        
-        label = collection.find_one({ '_id': ObjectId(user_id)}, { 'label': 1, '_id': 0 })
-        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado)
-        normalizarDatosEnLogs(campos_modificados,label)
-        notificarAlPersonalJerarquico(json_usuario_original,json_usuario_modificado)
-
+        json_usuario_modificado = getUser(user_id) #obtengo usuario modificado       
+        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
+        normalizarDatosEnLogs(json_usuario_original,campos_modificados)
     return {'mensaje': 'Usuario actualizado' if result.modified_count > 0 else 'No se realizaron cambios'}
 
 def deleteUser(user_id):
@@ -198,7 +192,7 @@ def getUsers():
     users = list(cursor)
     return json.loads(json_util.dumps(users))
 
-def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_modificado):
+def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado):
      # Lista para almacenar los campos modificados
     campos_modificados = {}
 
@@ -207,11 +201,12 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,label,json_usuario_
         if campo in json_usuario_original and json_usuario_original[campo] != valor_actual:
             campos_modificados[campo] = valor_actual
     
+    dni = campos_modificados.get('rol') if campos_modificados.get('rol') else None
     collection = db['historial_usuarios']
     response = collection.insert_one({
         'nombre': campos_modificados.get('nombre'),
         'apellido': campos_modificados.get('apellido'),
-        'dni': int(campos_modificados.get('dni')),
+        'dni': dni,
         'rol': campos_modificados.get('rol'),
         'horariosEntrada': campos_modificados.get('horariosEntrada'),
         'horariosSalida': campos_modificados.get('horariosSalida'),
@@ -236,9 +231,10 @@ def guardarHistorialUsuarios(label,nombre, apellido, dni, rol, horariosEntrada, 
             'fechaDeCambio':datetime.now(),
             'usuarioResponsable':''
         })
-def normalizarDatosEnLogs(cambios,label): 
+def normalizarDatosEnLogs(json_usuario_original,cambios): 
+    dni = json_usuario_original.get('dni')
     logs = db['logs']   
-    filtro = {'label': label}           
+    filtro = {'dni': dni}           
     actualizacion = {'$set': cambios}
 
     # Ejecutar la actualización
@@ -299,20 +295,33 @@ def send_email(to_email, subject, message):
         
 def vectorizarImagen(imagen):
     try:
+        # Convertir la imagen a RGB si no lo está
+        if len(imagen.shape) == 2:  # Escala de grises
+            imagen = cv2.cvtColor(imagen, cv2.COLOR_GRAY2RGB)
+        elif imagen.shape[2] == 4:  # RGBA a RGB
+            imagen = cv2.cvtColor(imagen, cv2.COLOR_RGBA2RGB)
+        elif imagen.shape[2] == 3:  # Ya está en RGB
+            pass
+        else:
+            raise ValueError("Tipo de imagen no soportado")
+
         # Encontrar la ubicación del rostro en la imagen
-        posrostro_entrada = face_recognition.face_locations(imagen)[0]
+        posrostro_entrada = face_recognition.face_locations(imagen)
         if not posrostro_entrada:
             # No se encontró ningún rostro en la imagen
             return None
         
-        # Obtener los embeddings del primer rostro encontrado        
-        vector_rostro_entrada = face_recognition.face_encodings(imagen, known_face_locations=[posrostro_entrada])        
+        # Obtener los embeddings del primer rostro encontrado
+        vector_rostro_entrada = face_recognition.face_encodings(imagen, known_face_locations=[posrostro_entrada[0]])
         if vector_rostro_entrada:
             return vector_rostro_entrada
         else:
             return None
     except Exception as e:
-         print(f"Error procesando la imagen: {e}")
+        print(f"Error procesando la imagen: {e}")
+        return None
+    
+
 def leerTHRESHOLD():
     collection = db['configuraciones']
     
