@@ -3,13 +3,14 @@ import io
 import cv2
 import numpy as np
 import face_recognition
-from mongoDB import searchMdb
+from mongoDB import searchMdb,leerTHRESHOLD,insertarTHRESHOLD
 import math
-from PIL import Image
+from datetime import datetime
+
 
 ##Nivel local
 
-THRESHOLD=0.93
+THRESHOLD=leerTHRESHOLD()
 imageSize=(150,150)
 
 vectoresLocales=[]
@@ -103,3 +104,16 @@ def obtener_imagen_desde_json(image_data):
 
     return image_np
    
+
+def getTHRESHOLD():
+    return str(THRESHOLD)
+
+def setTHRESHOLD(nuevo_umbral):
+    global THRESHOLD
+    nuevo_umbral=float(nuevo_umbral)
+    
+    if(nuevo_umbral>=0 and nuevo_umbral<=1):
+        insertarTHRESHOLD(nuevo_umbral)
+        THRESHOLD=nuevo_umbral
+        return True
+    return False
