@@ -117,8 +117,8 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'email':email
         })       
         guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
-        str_Id = str(response.inserted_id)
-    return {'mensaje': 'Usuario creado' if usuario_existente==None else 'El usuario ya existe en la base de datos con el id ${str_Id}',}
+    object_id = usuario_existente['_id'] if usuario_existente else None
+    return {'mensaje': 'Usuario creado' if usuario_existente==None else "El usuario ya existe en la base de datos con el id {}".format(object_id),}
  
 
 def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
