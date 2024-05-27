@@ -59,7 +59,7 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
         'tipo':tipo})
     
     result = {
-        'id': response.inserted_id,
+        'id': str(response.inserted_id),
         'horario':horario,
         'nombre':nombre,
         'apellido':apellido,
