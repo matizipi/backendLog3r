@@ -72,8 +72,8 @@ def authentication2():
             return jsonify({"message": "Autenticación fallida:Usuario No Registro"}), 401
         # print(result["rol"])
         # result_serializable = json.loads(json_util.dumps(result))
-        user = unionPersonaEspacios(result["_id"]).next()
-        result_serializable = json.loads(json_util.dumps(user))
+        user_con_lugares = unionPersonaEspacios(result)
+        result_serializable = json.loads(json_util.dumps(user_con_lugares))
 
         return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
     except Exception as e:
