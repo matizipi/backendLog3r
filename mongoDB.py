@@ -228,7 +228,7 @@ def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horari
             'horariosSalida': horariosSalida,
             'image': image,
             'fechaDeCambio':datetime.now(),
-            'usuarioResponsable':''
+            'usuarioResponsable':'RRHH'
         })
 def normalizarDatosEnLogs(json_usuario_original,cambios): 
     dni = json_usuario_original.get('dni')
