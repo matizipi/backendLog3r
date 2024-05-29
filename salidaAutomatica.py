@@ -16,19 +16,28 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%dT%H:%M:%S%z'
 )
-
+'''
 logging.info("Inicio de salidaAutomatica.py")  # Asegura que el mensaje se registre
 
 # Cargar las variables del archivo .env
 load_dotenv()
 
 # Configuración de la conexión a MongoDB
-MONGO_URI = os.getenv('MONGO_URI')  # por seguridad no subir URL al repo, crear archivo .env local
+MONGO_URI = os.getenv('MONGO_URI')  # por seguridad no subir URL al repo, crear archivo .env local'''
+# Configuración de la conexión a MongoDB
+MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
+MONGO_PORT = 27017
+MONGO_DB = 'pp1_rf'
+
 
 # Intentar conectar a MongoDB con manejo de errores
 try:
-    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
-    db = client.get_database()  # Obtener la base de datos desde la URI
+    #client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+    #db = client.get_database()  # Obtener la base de datos desde la URI
+    # Crear una instancia de MongoClient
+    client = MongoClient(MONGO_HOST, MONGO_PORT,tlsCAFile=certifi.where())
+    # Obtener una referencia a la base de datos
+    db = client[MONGO_DB]    
     logs_collection = db['logs']
     logging.info("Conexión a MongoDB establecida correctamente.")
 except errors.ServerSelectionTimeoutError as err:
@@ -80,7 +89,7 @@ def automatic_log_out():
 
     # Procesar los logs y actualizar el estado si es necesario
     for log in logs:
-        if log.get('estado') == 'Ingresando':  # log.get evitará que se lance un error KeyError si la clave 'estado' no está presente en un documento específico.            
+        if log.get('estado') == 'Ingresando' or 'ingresando' :  # log.get evitará que se lance un error KeyError si la clave 'estado' no está presente en un documento específico.            
             try:
                 registrarLog(now, log.get('nombre'), log.get('apellido'), log.get('dni'), 'Saliendo', 'Automatico')
                 logging.info(f"Registrado log automático para {log.get('dni')}")
