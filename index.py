@@ -246,7 +246,8 @@ def setCerteza():
 
 if __name__== "__main__":
     # development
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = os.getenv('PORT', 5000) # provided by Railway    
+    app.run(host='0.0.0.0', port=port, debug=True)
 
 def deploy_server():
     # production
