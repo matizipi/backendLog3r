@@ -192,6 +192,19 @@ def getUsers():
     users = list(cursor)
     return json.loads(json_util.dumps(users))
 
+def getLicenses():
+    collection = db['licencias']
+    cursor = collection.find()
+    licences = list(cursor)
+    return json.loads(json_util.dumps(licences))
+
+def newLicence(userId,fechaDesde,fechaHasta):
+    collection = db['licencias']
+    collection.insert_one({
+        "fechaDesde": fechaDesde,
+        "fechaHasta": fechaHasta,
+        "userId": { ObjectId(userId)}})
+
 def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado):
      # Lista para almacenar los campos modificados
     campos_modificados = {}

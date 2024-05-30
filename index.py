@@ -10,6 +10,8 @@ import numpy as np
 #import captureFace,training 
 
 from mongoDB import (
+    getLicenses,
+    newLicence,
     obtener_logs_dia_especifico,
     searchMdb, 
     unionPersonaEspacios, 
@@ -226,6 +228,39 @@ def get_users():
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
+@app.route('/api/certeza', methods=['GET'])
+
+@app.route('/api/licences', methods=['GET'])
+def get_licences():
+    try:
+        result = getLicenses()
+        return jsonify(result), 200
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500
+    
+@app.route('/api/licences', methods=['POST'])
+def logs():
+    data = request.form    
+    user_id = data.get('user_id')  # Assuming the date is passed as a string
+    fechaDesde = data.get('fechaDesde')
+    fechaHasta = data.get('fechaHasta')     
+    try:
+        # Convert string to datetime object
+        fechaDesde = datetime.strptime(fechaDesde, '%Y-%m-%d')  # Adjust the format if necessary       
+        fechaHasta = datetime.strptime(fechaHasta, '%Y-%m-%d')  # Adjust the format if necessary 
+        # Verificar que fechaHasta sea posterior a fechaDesde
+        if fechaHasta <= fechaDesde:
+            return jsonify({"error": "Faltan datos obligatorios"}), 400
+            # Now you can use horario as a datetime object in your registrarLog function
+
+        resultado = newLicence(user_id,fechaDesde,fechaHasta)         
+        return jsonify(resultado), 200
+    except Exception as e:
+        # If an error occurs, return a 500 HTTP status code and an error message
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500    
+
 @app.route('/api/certeza', methods=['GET'])
 def getCerteza():
     return comparacionCarasOffline.getTHRESHOLD()
