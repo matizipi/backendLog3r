@@ -181,7 +181,7 @@ def create_user():
             return jsonify({"error": "Faltan datos obligatorios"}), 400
         
         result = createUser(nombre, apellido, int(dni), rol, horariosEntrada, horariosSalida, image,email)
-        return jsonify(result), 201
+        return jsonify(result), 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
