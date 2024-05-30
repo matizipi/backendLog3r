@@ -1,0 +1,8 @@
+FROM python:3.8-slim-buster
+
+RUN apt-get update --no-install-recommends \
+  && apt-get install -y cmake g++ libgl1-mesa-glx libglib2.0-0 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir dlib pymongo flask python-dotenv certifi waitress DateTime Flask-Cors opencv-contrib-python face_recognition opencv-python-headless schedule

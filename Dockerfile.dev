@@ -1,15 +1,6 @@
-FROM python:3.8-slim-buster
-
-RUN apt-get update --no-install-recommends
-RUN --mount=type=cache,target=/var/cache/apt apt-get install -y cmake g++
+FROM gabrielalthaparro/log3r:1.1
 
 WORKDIR /app
-
-RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir dlib pymongo flask python-dotenv certifi waitress DateTime Flask-Cors
-RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir opencv-contrib-python
-RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir face_recognition
-RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir opencv-python-headless
-RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir schedule
 
 COPY . .
 
