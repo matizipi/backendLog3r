@@ -11,6 +11,7 @@ import numpy as np
 
 from mongoDB import (
     getLicenses,
+    getTeachers,
     newLicence,
     obtener_logs_dia_especifico,
     searchMdb, 
@@ -218,7 +219,15 @@ def delete_user(user_id):
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
-    
+
+@app.route('/api/teachers', methods=['GET'])
+def get_teachers():
+    try:
+        result = getTeachers()
+        return jsonify(result), 200
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500        
 
 @app.route('/api/users', methods=['GET'])
 def get_users():
@@ -238,6 +247,7 @@ def get_licences():
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
+    
     
 @app.route('/api/licences', methods=['POST'])
 def logs():

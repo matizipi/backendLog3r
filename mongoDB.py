@@ -100,8 +100,7 @@ def registrarLog(horario,nombre,apellido,dni,estado,tipo):
 def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
     # Buscar usuario por dni para corroborar si existe
-    usuario_existente = collection.find_one({'$or': [{'dni': dni},{'email': email}]
-    })
+    usuario_existente = collection.find_one({'$or': [{'dni': dni},{'email': email}]})
 
     if usuario_existente ==None:
         image = vectorizarImagen(image)[0].tolist()
@@ -191,6 +190,12 @@ def getUsers():
     cursor = collection.find()
     users = list(cursor)
     return json.loads(json_util.dumps(users))
+
+def getTeachers():
+    collection = db['usuarios']
+    cursor = collection.find({"rol":"Profesor"})
+    teachers = list(cursor)
+    return json.loads(json_util.dumps(teachers))
 
 def getLicenses():
     collection = db['licencias']
