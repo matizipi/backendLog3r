@@ -21,7 +21,7 @@ from mongoDB import (
 )
 
 
-import comparacionCarasOffline
+import comparacionCaras
 import json
 from bson import json_util,ObjectId
 from waitress import serve 
@@ -45,7 +45,7 @@ def predict():
         # Convertir la imagen a un formato adecuado para el procesamiento
         image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
         
-        userFinded=comparacionCarasOffline.compararConDB(image)
+        userFinded=comparacionCaras.compararConDB(image)
         file.close()
         if userFinded ==-1:        
             return jsonify({"message": "Autenticación fallida: Usuario No Registrado"}),401
@@ -67,7 +67,7 @@ def authentication2():
         embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
         # print(embeddings)
 
-        result = comparacionCarasOffline.compararEmbeddingConDB(embeddings)
+        result = comparacionCaras.compararEmbeddingConDB(embeddings)
         if result == -1:
             return jsonify({"message": "Autenticación fallida:Usuario No Registro"}), 401
         # print(result["rol"])
@@ -87,7 +87,7 @@ def login():
     # Convertir la imagen a un formato adecuado para el procesamiento
     image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
     
-    result=comparacionCarasOffline.compararConDB(image)
+    result=comparacionCaras.compararConDB(image)
     file.close()
     if result ==-1:        
         return jsonify({"message": "Autenticación fallida:Usuario No Registro"}),401
@@ -104,7 +104,7 @@ def login2():
     data = request.json # JSON payload containing the array of floats
     embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
 
-    result = comparacionCarasOffline.compararEmbeddingConDB(embeddings)
+    result = comparacionCaras.compararEmbeddingConDB(embeddings)
     if result == -1:
         return jsonify({"message": "Autenticación fallida:Usuario No Registro"}), 401
 
@@ -156,9 +156,8 @@ def logs():
 
 def launch_script_automatic_log():
     # Lanza el script salidaAutomatica.py en segundo plano
-    process = subprocess.Popen(
-        ["python", "salidaAutomatica.py"]
-    )
+    process = subprocess.Popen(["python", "salidaAutomatica.py"])
+
 @app.route('/api/users', methods=['POST'])
 def create_user():
     data = request.form
@@ -228,7 +227,7 @@ def get_users():
         return jsonify({'error': mensaje_error}), 500
 @app.route('/api/certeza', methods=['GET'])
 def getCerteza():
-    return comparacionCarasOffline.getTHRESHOLD()
+    return comparacionCaras.getTHRESHOLD()
 
 
 @app.route('/api/certeza', methods=['POST'])
@@ -236,7 +235,7 @@ def setCerteza():
     umbral=request.form.get("THRESHOLD")
     
     try:
-        if(comparacionCarasOffline.setTHRESHOLD(request.form.get("THRESHOLD"))):
+        if(comparacionCaras.setTHRESHOLD(request.form.get("THRESHOLD"))):
             return "Cambio exitoso",200
         return "Cambio denegado",400
     except Exception as e:
@@ -246,10 +245,12 @@ def setCerteza():
 
 if __name__== "__main__":
     # development
+    # launch_script_automatic_log()
     port = os.getenv('PORT', 5000) # provided by Railway    
     app.run(host='0.0.0.0', port=port, debug=True)
 
 def deploy_server():
     # production
+    launch_script_automatic_log()
     port = os.getenv('PORT') # provided by Railway    
     serve(app, host='0.0.0.0', port=port)
