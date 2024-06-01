@@ -193,7 +193,7 @@ def getUsers():
 
 def getTeachers():
     collection = db['usuarios']
-    cursor = collection.find({"rol":"Profesor"})
+    cursor = collection.find({"rol":"profesor"})
     teachers = list(cursor)
     return json.loads(json_util.dumps(teachers))
 
@@ -208,7 +208,7 @@ def newLicence(userId,fechaDesde,fechaHasta):
     collection.insert_one({
         "fechaDesde": fechaDesde,
         "fechaHasta": fechaHasta,
-        "userId": { ObjectId(userId)}})
+        "userId":  ObjectId(userId)})   
 
 def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado):
      # Lista para almacenar los campos modificados

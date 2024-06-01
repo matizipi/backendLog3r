@@ -250,7 +250,7 @@ def get_licences():
     
     
 @app.route('/api/licences', methods=['POST'])
-def logs():
+def license():
     data = request.form    
     user_id = data.get('user_id')  # Assuming the date is passed as a string
     fechaDesde = data.get('fechaDesde')
@@ -261,7 +261,7 @@ def logs():
         fechaHasta = datetime.strptime(fechaHasta, '%Y-%m-%d')  # Adjust the format if necessary 
         # Verificar que fechaHasta sea posterior a fechaDesde
         if fechaHasta <= fechaDesde:
-            return jsonify({"error": "Faltan datos obligatorios"}), 400
+            return jsonify({"error": "Fechas incorrectas"}), 400
             # Now you can use horario as a datetime object in your registrarLog function
 
         resultado = newLicence(user_id,fechaDesde,fechaHasta)         
