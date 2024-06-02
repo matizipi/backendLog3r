@@ -32,3 +32,40 @@ def post_imagenes_repository(embedding, user_id):
     }
 
     return result
+
+def put_imagenes_repository(_id, embedding, user_id):
+
+    collection = db['imagenes']
+    result = collection.update_one(
+        {
+        "_id": ObjectId(_id)
+        },
+        {"$set":
+            {
+            "embedding": embedding,
+            "userId": ObjectId(user_id)
+            }
+        }
+    )
+
+    result = {
+        "modifiedCount": result.modified_count
+    }
+
+    return result
+
+def delete_imagenes_repository(_id):
+
+    collection = db['imagenes']
+    result = collection.delete_one(
+        {
+        "_id": ObjectId(_id)
+        }
+    )
+
+    result = {
+        "deleted_count": result.deleted_count
+    }
+
+    return result
+
