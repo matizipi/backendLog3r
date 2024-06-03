@@ -11,8 +11,7 @@ import numpy as np
 #import captureFace,training 
 
 from mongoDB import (    
-    unionPersonaEspacios,
-    registrarLog,
+    unionPersonaEspacios,    
     createUser,
     updateUser,
     deleteUser,
@@ -45,7 +44,7 @@ def home():
 app.register_blueprint(imagenes_bp)
 app.register_blueprint(licencias_bp, url_prefix = '/api/licencias')
 app.register_blueprint(profesores_bp,url_prefix = '/api/profesores')
-app.register_blueprint(logs_bp,url_prefix = '/api/logs')
+app.register_blueprint(logs_bp, url_prefix = '/api/logs')
 
 
 @app.route('/api/authentication', methods=['POST'])

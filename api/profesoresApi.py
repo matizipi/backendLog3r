@@ -1,5 +1,5 @@
 from flask import Blueprint,jsonify
-from repository.licenciasRepository import getTeachers
+from repository.profesoresRepository import getTeachers
 
 # Crear instancia Blueprint con el nombre 'profesores'
 profesores_bp = Blueprint('profesores', __name__)

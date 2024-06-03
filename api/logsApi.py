@@ -1,10 +1,9 @@
 from flask import Blueprint, request, jsonify
-from repository.logsRepository import obtener_logs_dia_especifico,registrarLog
+from repository.logsRepository import obtener_logs_dia_especifico, registrarLog
 from datetime import datetime
 
 # Crear instancia Blueprint con el nombre 'logs'
 logs_bp = Blueprint('logs', __name__)
-
 
 @logs_bp.route('/', methods=['GET'])
 def get_logs():
@@ -23,7 +22,7 @@ def get_logs():
         return jsonify({'error': mensaje_error}), 500
 
 @logs_bp.route('/dia', methods=['GET'])
-def get_logs():
+def get_logs_dia():
     fecha_str = request.args.get('fecha')
     if not fecha_str:
         return jsonify({'error': 'Falta el parámetro fecha'}), 400
@@ -38,9 +37,8 @@ def get_logs():
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
-
 @logs_bp.route('/authentication', methods=['POST'])
-def logs():
+def log_authentication():
     data = request.form
     horario_str = data.get('horario')  # Assuming the date is passed as a string
     nombre = data.get('nombre')

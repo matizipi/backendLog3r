@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
-from repository.licenciasRepository import newLicense,getLicenses,getTeachers
-from repository.usuariosRepository import get_usuario_repository
+from repository.licenciasRepository import newLicense,getLicenses
 from datetime import datetime
 
 # Crear instancia Blueprint con el nombre 'licencias'
