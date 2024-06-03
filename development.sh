@@ -2,7 +2,7 @@
 
 # Comprobar si la imagen ya existe
 if [[ "$(docker images -q log3r 2> /dev/null)" == "" ]]; then
-  docker build -t log3r -f Dockerfile.dev .
+  docker build -t gabrielalthaparro/log3r:1.1 -f Dockerfile.dev .
 fi
 
 # Comprobar si el contenedor ya existe

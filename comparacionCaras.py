@@ -62,7 +62,7 @@ def compararEmbeddingConDB(embedding_input):
 
     cursor.close()
     if(max_imagen_similitude != -1):
-        print(max_imagen_similitude)
+        # print(max_imagen_similitude)
         user = getUserByObjectid(max_imagen_similitude['userId'])
     return user
 

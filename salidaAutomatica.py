@@ -8,33 +8,24 @@ from dotenv import load_dotenv
 import time
 from mongoDB import registrarLog
 
+load_dotenv()
 
-# Configurar logging
+# Configurar logging a la consola
 logging.basicConfig(
-    filename='salidaAutomatica.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%dT%H:%M:%S%z'
 )
-'''
+
 logging.info("Inicio de salidaAutomatica.py")  # Asegura que el mensaje se registre
 
-# Cargar las variables del archivo .env
-load_dotenv()
-
-# Configuración de la conexión a MongoDB
-MONGO_URI = os.getenv('MONGO_URI')  # por seguridad no subir URL al repo, crear archivo .env local'''
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
 MONGO_PORT = 27017
 MONGO_DB = 'pp1_rf'
 
-
 # Intentar conectar a MongoDB con manejo de errores
 try:
-    #client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
-    #db = client.get_database()  # Obtener la base de datos desde la URI
-    # Crear una instancia de MongoClient
     client = MongoClient(MONGO_HOST, MONGO_PORT,tlsCAFile=certifi.where())
     # Obtener una referencia a la base de datos
     db = client[MONGO_DB]    
@@ -101,7 +92,7 @@ def automatic_log_out():
     logging.info(f"Proceso de logout automático completado en: {timeDuration}")
 
 # Programar la tarea diaria a las 23:59
-schedule.every().day.at("23:59").do(automatic_log_out)
+schedule.every().day.at("23:59","America/Argentina/Buenos_Aires").do(automatic_log_out)
 
 logging.info("Iniciando bucle de ejecución")
 # Mantener el script en ejecución para que se ejecute la tarea programada
