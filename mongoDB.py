@@ -69,33 +69,6 @@ def unionPersonaEspacios(user):
 
     return user
 
-def registrarLog(horario,nombre,apellido,dni,estado,tipo):
-    # Realizar operaciones con la base de datos MongoDB
-    # Cargar las variables del archivo .env
-    load_dotenv()
-    # Configuración de la conexión a MongoDB
-    MONGO_URI = os.getenv('MONGO_URI')  
-    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
-    db = client.get_database()  # Obtener la base de datos desde la URI
-    collection = db['logs']      
-    response = collection.insert_one({
-        'horario':horario,
-        'nombre':nombre,
-        'apellido':apellido,
-        'dni':int(dni),
-        'estado':estado,
-        'tipo':tipo})    
-
-    result = {
-        'id': str(response.inserted_id),
-        'horario':horario,
-        'nombre':nombre,
-        'apellido':apellido,
-        'dni':int(dni),
-        'estado':estado,
-        'tipo':tipo
-    }
-    return result
 
 def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
     collection = db['usuarios']
@@ -153,37 +126,6 @@ def getUser(user_id):
     user = collection.find_one({'_id': ObjectId(user_id)})
     return json.loads(json_util.dumps(user))
 
-def obtener_logs_dia_especifico(fecha):    
-    collection = db['logs']
-    
-    # Convertir la fecha en un rango de inicio y fin del día
-    fecha_inicio = datetime.combine(fecha, datetime.min.time())
-    fecha_fin = fecha_inicio + timedelta(days=1)
-    #print(f"Rango de fecha: {fecha_inicio} - {fecha_fin}")  # Depuración
-
-    # Pipeline de agregación
-    pipeline = [
-        {
-            '$match': {
-                'horario': {
-                    '$gte': fecha_inicio,
-                    '$lt': fecha_fin
-                }
-            }
-        }
-    ]
-
-    # Ejecutar el pipeline
-    resultados = list(collection.aggregate(pipeline))
-    print(f"Resultados encontrados: {resultados}")  # Depuración
-
-    # Convertir los resultados a un formato adecuado para JSON
-    resultados_json = []
-    for resultado in resultados:
-        resultado['_id'] = str(resultado['_id'])  # Convertir ObjectId a string
-        resultados_json.append(resultado)
-
-    return resultados_json  # Devolver como una lista de diccionarios
 
 def getUsers():
     collection = db['usuarios']
@@ -191,24 +133,7 @@ def getUsers():
     users = list(cursor)
     return json.loads(json_util.dumps(users))
 
-def getTeachers():
-    collection = db['usuarios']
-    cursor = collection.find({"rol":"profesor"})
-    teachers = list(cursor)
-    return json.loads(json_util.dumps(teachers))
 
-def getLicenses():
-    collection = db['licencias']
-    cursor = collection.find()
-    licences = list(cursor)
-    return json.loads(json_util.dumps(licences))
-
-def newLicence(userId,fechaDesde,fechaHasta):
-    collection = db['licencias']
-    collection.insert_one({
-        "fechaDesde": fechaDesde,
-        "fechaHasta": fechaHasta,
-        "userId":  ObjectId(userId)})   
 
 def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado):
      # Lista para almacenar los campos modificados

@@ -10,11 +10,7 @@ import cv2
 import numpy as np
 #import captureFace,training 
 
-from mongoDB import (
-    getLicenses,
-    getTeachers,
-    newLicence,
-    obtener_logs_dia_especifico,
+from mongoDB import (    
     unionPersonaEspacios,
     registrarLog,
     createUser,
@@ -28,6 +24,9 @@ import json
 from bson import json_util
 from waitress import serve
 from api.imagenesApi import imagenes_bp
+from api.licenciasApi import licencias_bp
+from api.profesoresApi import profesores_bp
+from api.logsApi import logs_bp
 
 ## variable global para ir guardando el ultimo label usado en el modelo
 ultimo_Label = 0
@@ -44,6 +43,9 @@ def home():
 
 
 app.register_blueprint(imagenes_bp)
+app.register_blueprint(licencias_bp, url_prefix = '/api/licencias')
+app.register_blueprint(profesores_bp,url_prefix = '/api/profesores')
+app.register_blueprint(logs_bp,url_prefix = '/api/logs')
 
 
 @app.route('/api/authentication', methods=['POST'])
@@ -124,48 +126,6 @@ def login2():
     return jsonify({"message": "Rol incorrecto"}), 401
 
 
-## Para el proximo sprint 3"
-
-@app.route('/api/day/logs', methods=['GET'])
-def get_logs():
-    fecha_str = request.args.get('fecha')
-    if not fecha_str:
-        return jsonify({'error': 'Falta el parámetro fecha'}), 400
-
-    try:
-        # Convertir la fecha de cadena a objeto datetime
-        fecha = datetime.strptime(fecha_str, '%Y-%m-%d')
-        print(f"Fecha recibida: {fecha}")  # Depuración
-        result = obtener_logs_dia_especifico(fecha)
-        return jsonify(result), 200  # Asegurar que se devuelve como JSON
-    except Exception as e:
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        return jsonify({'error': mensaje_error}), 500
-
-
-@app.route('/api/authentication/logs', methods=['POST'])
-def logs():
-    data = request.form
-    horario_str = data.get('horario')  # Assuming the date is passed as a string
-    nombre = data.get('nombre')
-    apellido = data.get('apellido')
-    dni = data.get('dni')
-    estado = data.get('estado')
-    tipo = data.get('tipo')
-
-    try:
-        # Convert string to datetime object
-        horario = datetime.strptime(horario_str, '%Y-%m-%d %H:%M:%S')  # Adjust the format if necessary       
-
-        # Now you can use horario as a datetime object in your registrarLog function
-        resultado = registrarLog(horario, nombre, apellido, dni, estado, tipo)
-
-        return jsonify(resultado), 200
-    except Exception as e:
-        # If an error occurs, return a 500 HTTP status code and an error message
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        return jsonify({'error': mensaje_error}), 500
-
 
 def launch_script_automatic_log():
     # Lanza el script salidaAutomatica.py en segundo plano
@@ -231,15 +191,7 @@ def delete_user(user_id):
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
-
-@app.route('/api/teachers', methods=['GET'])
-def get_teachers():
-    try:
-        result = getTeachers()
-        return jsonify(result), 200
-    except Exception as e:
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        return jsonify({'error': mensaje_error}), 500        
+    
 
 @app.route('/api/users', methods=['GET'])
 def get_users():
@@ -250,40 +202,8 @@ def get_users():
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
-
-@app.route('/api/certeza', methods=['GET'])
-
-@app.route('/api/licences', methods=['GET'])
-def get_licences():
-    try:
-        result = getLicenses()
-        return jsonify(result), 200
-    except Exception as e:
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        return jsonify({'error': mensaje_error}), 500
-    
-    
-@app.route('/api/licences', methods=['POST'])
-def license():
-    data = request.form    
-    user_id = data.get('user_id')  # Assuming the date is passed as a string
-    fechaDesde = data.get('fechaDesde')
-    fechaHasta = data.get('fechaHasta')     
-    try:
-        # Convert string to datetime object
-        fechaDesde = datetime.strptime(fechaDesde, '%Y-%m-%d')  # Adjust the format if necessary       
-        fechaHasta = datetime.strptime(fechaHasta, '%Y-%m-%d')  # Adjust the format if necessary 
-        # Verificar que fechaHasta sea posterior a fechaDesde
-        if fechaHasta <= fechaDesde:
-            return jsonify({"error": "Fechas incorrectas"}), 400
-            # Now you can use horario as a datetime object in your registrarLog function
-
-        resultado = newLicence(user_id,fechaDesde,fechaHasta)         
-        return jsonify(resultado), 200
-    except Exception as e:
-        # If an error occurs, return a 500 HTTP status code and an error message
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        return jsonify({'error': mensaje_error}), 500    
+   
+ 
 
 @app.route('/api/certeza', methods=['GET'])
 def getCerteza():
