@@ -5,7 +5,7 @@ from repository.profesoresRepository import getTeachers
 profesores_bp = Blueprint('profesores', __name__)
 
 
-@profesores_bp.route('/api/profesores', methods=['GET'])
+@profesores_bp.route('/', methods=['GET'])
 def get_teachers():
     try:
         result = getTeachers()
