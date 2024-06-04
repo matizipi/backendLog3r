@@ -6,13 +6,13 @@ from mongoDB import db
 def getLicenses():
     collection = db['licencias']
     cursor = collection.find()
-    licences = list(cursor)
+    licenses = list(cursor)
     
     # Convertir ObjectId a cadena para que sea serializable
-    for licence in licences:
-        licence['_id'] = str(licence['_id'])
+    for license in licenses:
+        license['_id'] = str(license['_id'])
     
-    return licences
+    return licenses
 
 def newLicense(userId,fechaDesde,fechaHasta):
     collection = db['licencias']

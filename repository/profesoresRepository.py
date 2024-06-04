@@ -8,7 +8,7 @@ def getTeachers():
 
     # Convertir ObjectId a cadena para que sea serializable
     for teacher in teachers:
-        teacher['_id'] = str(license['_id'])
+        teacher['_id'] = str(teacher['_id'])
 
     return teachers
 
