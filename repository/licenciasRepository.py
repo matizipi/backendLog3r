@@ -11,6 +11,7 @@ def getLicenses():
     # Convertir ObjectId a cadena para que sea serializable
     for license in licenses:
         license['_id'] = str(license['_id'])
+        license['userId'] = str(license['userId'])
     
     return licenses
 
