@@ -29,14 +29,22 @@ def license():
         fechaHasta = datetime.strptime(fechaHasta, '%Y-%m-%d')
         # Verificar que fechaHasta sea posterior a fechaDesde
         # Obtener el día de la semana de fechaDesde
-        dia_semana_fechaDesde = fechaDesde.strftime('%w')
-        dia_semana_fechaHasta = fechaHasta.strftime('%w')
-        diferencia_dias = ((fechaHasta - fechaDesde).days)
-        resto = diferencia_dias % 7
+        dia_semana_fechaDesde = int(fechaDesde.strftime('%w'))
+        dia_semana_fechaHasta = int(fechaHasta.strftime('%w'))
+        diferencia_dias = ((fechaHasta - fechaDesde).days) +1
+        resto = (diferencia_dias) % 7
 
-        if dia_semana_fechaDesde != 1 or dia_semana_fechaHasta !=0 or fechaHasta <= fechaDesde or diferencia_dias>35 or resto!=0: 
-            return jsonify({"error": "Fechas incorrectas"}), 400          
-           
+        if dia_semana_fechaDesde != 1  : 
+            return jsonify({"error": "La licencia debe comenzar un lunes"}), 400 
+        if dia_semana_fechaHasta !=0 :
+            return jsonify({"error": "La licencia debe finalizar un domingo"}), 400 
+        if resto!=0:
+            return jsonify({"error": "La licencia debe ser multiplo de 7"}), 400
+        if diferencia_dias>35 : 
+            return jsonify({"error": "La licencia debe ser menor a 35"}), 400 
+        if fechaHasta <= fechaDesde:
+           return jsonify({"error": "La fecha de inicio debe ser menor a la fin"}), 400          
+     
 
         # Convertir las fechas al formato deseado
         fechaDesde_str = fechaDesde.strftime('%Y-%m-%d')
@@ -50,10 +58,10 @@ def license():
         return jsonify({'error': mensaje_error}), 500  
     
 
-@licencias_bp.route('/<user_id>', methods=['DELETE'])
-def delete_licencia(user_id):
+@licencias_bp.route('/<licenciaId>', methods=['DELETE'])
+def delete_licencia(licenciaId):
     try:
-        result = deleteLicencia(user_id)
+        result = deleteLicencia(licenciaId)
         return jsonify(result), 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
