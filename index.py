@@ -11,10 +11,8 @@ import numpy as np
 #import captureFace,training 
 
 from mongoDB import (
-    obtener_logs_dia_especifico,
     searchMdb, 
     unionPersonaEspacios, 
-    registrarLog, 
     createUser, 
     updateUser, 
     deleteUser, 
