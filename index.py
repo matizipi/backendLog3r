@@ -17,7 +17,9 @@ from mongoDB import (
     createUser, 
     updateUser, 
     deleteUser, 
-    getUsers
+    getUsers,
+    notificarCorte
+    
 )
 
 
@@ -241,6 +243,27 @@ def setCerteza():
     except Exception as e:
         print(e)
         return "Error de entrada",500
+    
+@app.route('/api/authentication/cortes', methods=['POST'])
+def notificar_cortes_conexion():
+    data = request.form    
+    horario_desconexion_str = data.get('horarioDesconexion')  
+    horario_reconexion_str = data.get('horarioReconexion')  
+    cantRegSincronizados = data.get('cantRegSincronizados')
+    periodoDeCorte_str=data.get('periodoDeCorte')
+    try:
+      
+        horarioDesconexion = datetime.strptime(horario_desconexion_str, '%Y-%m-%d %H:%M:%S')  
+        horarioReconexion = datetime.strptime(horario_reconexion_str, '%Y-%m-%d %H:%M:%S')
+        periodoDeCorte = datetime.strptime(periodoDeCorte_str, '%Y-%m-%d %H:%M:%S') 
+
+        result = notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
+
+        return jsonify(result), 200
+    
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500 
     
 
 if __name__== "__main__":
