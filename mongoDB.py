@@ -113,6 +113,7 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
         json_usuario_modificado = getUser(user_id) #obtengo usuario modificado       
         campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
         normalizarDatosEnLogs(json_usuario_original,campos_modificados)
+        notificarCambioDeTitularidad(json_usuario_original,json_usuario_modificado)
     return {'mensaje': 'Usuario actualizado' if result.modified_count > 0 else 'No se realizaron cambios'}
 
 def deleteUser(user_id):
@@ -181,19 +182,19 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
 
-def notificarAlPersonalJerarquico(json_usuario_original,json_usuario_modificado):
+def notificarCambioDeTitularidad(json_usuario_original,json_usuario_modificado):
     asunto="Notificación sobre cambio de titularidad"
     collection = db['usuarios']
     personal_jerarquico = collection.find({"rol": "personal jerárquico"})
     emails = [user['email'] for user in personal_jerarquico]
 
-    mensaje=generar_cuerpo_del_correo(json_usuario_original,json_usuario_modificado)
+    mensaje=generar_cuerpo_cambio_titularidad(json_usuario_original,json_usuario_modificado)
 
     for email in emails:
         send_email(email, asunto, mensaje)
 
 
-def generar_cuerpo_del_correo(original, modificado):
+def generar_cuerpo_cambio_titularidad(original, modificado):
     cambios = []
     for key in original:
         if key in modificado and original[key] != modificado[key]:
@@ -206,13 +207,36 @@ def generar_cuerpo_del_correo(original, modificado):
     cuerpo += "\n".join(cambios)
     return cuerpo
 
+def notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte):
+    asunto="Notificación sobre corte de Internet (Log3rApp)"
+    collection = db['usuarios']
+    personal_jerarquico = collection.find({"rol": "personal jerárquico"})
+    emails = [user['email'] for user in personal_jerarquico]
+
+    mensaje=generar_cuerpo_notificacion_corte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
+
+    for email in emails:
+        send_email(email, asunto, mensaje)
+
+def generar_cuerpo_notificacion_corte(horarioDesconexion, horarioReconexion, cantRegSincronizados,periodoDeCorte):       
+    cuerpo = (
+        f"Se ha detectado un corte de Internet en la aplicación:\n\n"
+        f"Horario de Desconexión: {horarioDesconexion}\n"
+        f"Horario de Reconexión: {horarioReconexion}\n"
+        f"Cantidad de Registros Sincronizados: {cantRegSincronizados}\n\n"
+        f"Tiempo total sin conexión de internet: {periodoDeCorte} (horas\minutos\segundos) \n\n"
+        f"Log3rApp by AlphaTeam"
+    )
+    return cuerpo
+
+
 def send_email(to_email, subject, message):
 
-    smtp_server = 'smtp.gmail.com'
+    smtp_server = 'smtp.office365.com'
     smtp_port = 587
-    smtp_user = 'log3rapp@gmail.com'
-    smtp_password = 'log3rAlpha'
-
+    smtp_user = os.getenv('OUTLOOK_USER') 
+    smtp_password = os.getenv('OUTLOOK_PASSWORD') 
+    
     # Configuración del mensaje
     msg = MIMEMultipart()
     msg['From'] = smtp_user
