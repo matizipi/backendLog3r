@@ -20,13 +20,13 @@ def post_roles():
     try:
       validateNameAndLugares(new_role_name, new_lugares)
     except Exception as e:
-      return jsonify({"status":"error","message":e.args[0]}), 400
+      return jsonify({"message":e.args[0]}), 400
 
     try:
       new_role = post_roles_repository(new_role_name, new_lugares)
       return jsonify(new_role), 201
     except Exception as e:
-      return jsonify({"status":"error","message":e.args[0]}), 500
+      return jsonify({"message":e.args[0]}), 500
 
 
 @roles_bp.route('/', methods=['PUT'])
@@ -65,7 +65,7 @@ def delete_roles():
 
 
 def validateNameAndLugares(role_name, lugares):
-    if not role_name:
+    if not role_name or not isinstance(role_name, str):
       raise RuntimeError('Please enter valid nombre')
         
     if not lugares or not type(lugares) is list:

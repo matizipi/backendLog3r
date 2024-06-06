@@ -1,16 +1,9 @@
-import base64
-import io
-import cv2
-import numpy as np
 import face_recognition
-from mongoDB import searchMdb,leerTHRESHOLD,insertarTHRESHOLD, getUserByObjectid, getImageEmbeddings
+from mongoDB import searchMdb, getUserByObjectid, getImageEmbeddings
 import math
-from datetime import datetime
+from repository.configRepository import get_config_repository
 
-
-##Nivel local
-
-THRESHOLD=leerTHRESHOLD()
+THRESHOLD=get_config_repository('certeza')[0]['valor']
 imageSize=(150,150)
 
 vectoresLocales=[]
@@ -73,33 +66,24 @@ def calculateCosineSimilarity(embeddings1,embeddings2):
     norm1 = 0.0
     norm2 = 0.0
 
-
     for i in range((len(embeddings1))): 
         
         dotProduct += embeddings1[i] * embeddings2[i]
         norm1 += embeddings1[i] * embeddings1[i]
         norm2 += embeddings2[i] * embeddings2[i]
         
-    
     cosine_similarity = dotProduct / (math.sqrt(norm1) * math.sqrt(norm2))
     return float(cosine_similarity)
     
      
-
-
-    
 def vectorizarImagen(imagen):
-    
     #entrada=detectarRostro(cv2.imread(entrada))
     #entrada=cv2.imread(imagen)
     # cv2.imshow("a",imagen)
     # cv2.waitKey(10000)
     posrostro_entrada=face_recognition.face_locations(imagen)[0]
     
-    
-    
     vector_rostro_entrada=face_recognition.face_encodings(imagen,known_face_locations=[posrostro_entrada])
-    
     
     #print(vector_rostro_entrada)
     #print(vector_rostro_prueba)
@@ -120,17 +104,9 @@ def imagenSinRostros(imagen):
     return False
 
 
-   
-
 def getTHRESHOLD():
-    return str(THRESHOLD)
+    return THRESHOLD
 
 def setTHRESHOLD(nuevo_umbral):
     global THRESHOLD
-    nuevo_umbral=float(nuevo_umbral)
-    
-    if(nuevo_umbral>=0 and nuevo_umbral<=1):
-        insertarTHRESHOLD(nuevo_umbral)
-        THRESHOLD=nuevo_umbral
-        return True
-    return False
+    THRESHOLD=nuevo_umbral

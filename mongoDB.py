@@ -14,7 +14,6 @@ from email.mime.text import MIMEText
 import face_recognition
 import cv2
 
-
 # Configuración de la conexión a MongoDB
 MONGO_HOST = os.getenv('MONGO_URI') # por seguridad no subir url al repo, crear archivo .env local
 MONGO_PORT = 27017
@@ -262,27 +261,3 @@ def vectorizarImagen(imagen):
     except Exception as e:
         print(f"Error procesando la imagen: {e}")
         return None
-    
-
-def leerTHRESHOLD():
-    collection = db['configuraciones']
-    
-    cursor = collection.find().sort({"fechaDeCambio":-1}).limit(1)
-    THRESHOLDD_document=cursor.next()
-    cursor.close()
-    return THRESHOLDD_document["valor"]
-
-def insertarTHRESHOLD(THRESHOLD):
-    collection = db['configuraciones']
-    collection.insert_one({
-        
-        'nombre':"certeza",
-        'valor':THRESHOLD,
-        'usuarioDeCambio':"inicial",
-        'fechaDeCambio':datetime.now()})
-
-
-if __name__== "__main__":
-   
-    searchMdb()
-    

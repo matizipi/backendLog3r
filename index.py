@@ -27,6 +27,7 @@ from api.licenciasApi import licencias_bp
 from api.profesoresApi import profesores_bp
 from api.logsApi import logs_bp
 from api.rolesApi import roles_bp
+from api.configApi import config_bp
 
 ## variable global para ir guardando el ultimo label usado en el modelo
 ultimo_Label = 0
@@ -47,6 +48,7 @@ app.register_blueprint(licencias_bp, url_prefix = '/api/licencias')
 app.register_blueprint(profesores_bp, url_prefix = '/api/profesores')
 app.register_blueprint(logs_bp, url_prefix = '/api/logs')
 app.register_blueprint(roles_bp, url_prefix = '/api/roles')
+app.register_blueprint(config_bp, url_prefix = '/api/config')
 
 @app.route('/api/authentication', methods=['POST'])
 def predict():
