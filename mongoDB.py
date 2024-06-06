@@ -266,7 +266,7 @@ def generar_cuerpo_cambio_titularidad(original, modificado):
     return cuerpo
 
 def notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte):
-    asunto="Notificación sobre corte de Internet"
+    asunto="Notificación sobre corte de Internet (Log3rApp)"
     collection = db['usuarios']
     personal_jerarquico = collection.find({"rol": "personal jerárquico"})
     emails = [user['email'] for user in personal_jerarquico]
@@ -278,23 +278,23 @@ def notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,per
 
 def generar_cuerpo_notificacion_corte(horarioDesconexion, horarioReconexion, cantRegSincronizados,periodoDeCorte):       
     cuerpo = (
-        f"Se ha detectado un corte de Internet:\n\n"
+        f"Se ha detectado un corte de Internet en la aplicación:\n\n"
         f"Horario de Desconexión: {horarioDesconexion}\n"
         f"Horario de Reconexión: {horarioReconexion}\n"
-        f"Cantidad de Registros Sincronizados: {cantRegSincronizados}\n"
-        f"\n"
-        f"Tiempo total sin conexión de internet: {periodoDeCorte}\n"
+        f"Cantidad de Registros Sincronizados: {cantRegSincronizados}\n\n"
+        f"Tiempo total sin conexión de internet: {periodoDeCorte} (horas\minutos\segundos) \n\n"
+        f"Log3rApp by AlphaTeam"
     )
     return cuerpo
 
 
 def send_email(to_email, subject, message):
 
-    smtp_server = 'smtp.gmail.com'
+    smtp_server = 'smtp.office365.com'
     smtp_port = 587
-    smtp_user = 'log3rapp@gmail.com'
-    smtp_password = 'log3rAlpha'
-
+    smtp_user = os.getenv('OUTLOOK_USER') 
+    smtp_password = os.getenv('OUTLOOK_PASSWORD') 
+    
     # Configuración del mensaje
     msg = MIMEMultipart()
     msg['From'] = smtp_user

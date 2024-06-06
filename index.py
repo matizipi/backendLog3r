@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,timedelta
 import os
 import subprocess
 from dotenv import load_dotenv
@@ -253,9 +253,12 @@ def notificar_cortes_conexion():
     periodoDeCorte_str=data.get('periodoDeCorte')
     try:
       
-        horarioDesconexion = datetime.strptime(horario_desconexion_str, '%Y-%m-%d %H:%M:%S')  
+        horarioDesconexion = datetime.strptime(horario_desconexion_str, '%Y-%m-%d %H:%M:%S')
         horarioReconexion = datetime.strptime(horario_reconexion_str, '%Y-%m-%d %H:%M:%S')
-        periodoDeCorte = datetime.strptime(periodoDeCorte_str, '%Y-%m-%d %H:%M:%S') 
+
+         # Convertir periodoDeCorte_str a timedelta
+        periodoDeCorte_time = datetime.strptime(periodoDeCorte_str, '%H:%M:%S')
+        periodoDeCorte = timedelta(hours=periodoDeCorte_time.hour, minutes=periodoDeCorte_time.minute, seconds=periodoDeCorte_time.second)
 
         result = notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
 
