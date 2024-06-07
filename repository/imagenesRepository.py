@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from mongoDB import db
 from bson import ObjectId
 
@@ -22,7 +24,8 @@ def post_imagenes_repository(embedding, user_id):
     collection = db['imagenes']
     result = collection.insert_one({
         "embedding": embedding,
-        "userId": ObjectId(user_id)
+        "userId": ObjectId(user_id),
+        "fecha": datetime.today().replace(microsecond=0)
     })
 
     result = {

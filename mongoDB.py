@@ -56,7 +56,7 @@ def getUserByObjectid(object_id):
         return None
     
 def unionPersonaEspacios(user):
-    rolesCursor = db.roles.find({"nombre":{"$in":user["rol"]}})
+    rolesCursor = db["roles"].find({"nombre":user["rol"]})
     lugares_set = set()
     for doc in rolesCursor:
         lugares_set.update(doc["lugares"])
@@ -69,14 +69,13 @@ def unionPersonaEspacios(user):
     return user
 
 
-def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
+def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida,email):
     collection = db['usuarios']
     # Buscar usuario por dni para corroborar si existe
     usuario_existente = collection.find_one({'$or': [{'dni': dni},{'email': email}]})
 
     if usuario_existente ==None:
-        image = vectorizarImagen(image)[0].tolist()
-             
+
         response = collection.insert_one({            
             'nombre': nombre,
             'apellido': apellido,
@@ -84,18 +83,16 @@ def createUser(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, imag
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image,
             'email':email
         })       
-        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image)
+        guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida)
     object_id = usuario_existente['_id'] if usuario_existente else None
     return {'mensaje': 'Usuario creado' if usuario_existente==None else "El usuario ya existe en la base de datos con el id {}".format(object_id),}
  
 
-def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image,email):
+def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida,email):
     collection = db['usuarios']
     json_usuario_original = getUser(user_id) #obtengo usuario antes de modificarse
-    image = vectorizarImagen(image)[0].tolist()          
     result = collection.update_one(
         {'_id': ObjectId(user_id)},
         {'$set': {
@@ -105,7 +102,6 @@ def updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSal
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image,
             'email':email
         }}
     )
@@ -160,7 +156,7 @@ def guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modifi
     })
     return campos_modificados
 
-def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image):
+def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horariosSalida):
     collection = db['historial_usuarios']
     result = collection.insert_one({            
             'nombre': nombre,
@@ -169,7 +165,6 @@ def guardarHistorialUsuarios(nombre, apellido, dni, rol, horariosEntrada, horari
             'rol': rol,
             'horariosEntrada': horariosEntrada,
             'horariosSalida': horariosSalida,
-            'image': image,
             'fechaDeCambio':datetime.now(),
             'usuarioResponsable':'RRHH'
         })
