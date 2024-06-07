@@ -285,3 +285,22 @@ def vectorizarImagen(imagen):
     except Exception as e:
         print(f"Error procesando la imagen: {e}")
         return None
+    
+def getLastEstadoByDni(dni):
+    logs = db['logs']
+    try:
+        dni = int(dni)
+        
+        result = logs.find({'dni': dni}).sort('horario', -1).limit(1)
+        last_log = list(result)
+
+        if last_log:
+            last_log[0]['_id'] = str(last_log[0]['_id'])
+            return last_log[0], 200
+        else:
+            return {}, 404
+    except ValueError:
+        return {'error': 'El parámetro dni debe ser un número entero'}, 400
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return {'error': mensaje_error}, 500
