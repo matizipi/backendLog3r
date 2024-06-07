@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta
 from mongoDB import db
 from bson import ObjectId
@@ -66,9 +67,10 @@ def chequearExistenciaDeUsuario(nombre, apellido, dni):
         'nombre': nombre,
         'apellido': apellido
     })
-    
     if usuario:
         print(f"El usuario {nombre} {apellido} con DNI {dni} ya existe en la base de datos.")
     else:
         print(f"El usuario {nombre} {apellido} con DNI {dni} no existe en la base de datos.")
+        time.sleep(10)
         notificarIncompatibilidadEnRegistro(nombre, apellido, dni)
+        
