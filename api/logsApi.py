@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from repository.logsRepository import obtener_logs_dia_especifico, registrarLog
 from datetime import datetime
+from mongoDB import getLastEstadoByDni
 
 # Crear instancia Blueprint con el nombre 'logs'
 logs_bp = Blueprint('logs', __name__)
@@ -59,3 +60,12 @@ def log_authentication():
         # If an error occurs, return a 500 HTTP status code and an error message
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
+    
+@logs_bp.route('/lastEstadoByDni', methods=['GET'])
+def get_last_estado():
+    dni = request.args.get('dni')
+    if not dni:
+        return jsonify({'error': 'Falta el parámetro dni'}), 400
+
+    response, status_code = getLastEstadoByDni(dni)  # Obtener la respuesta y el código de estado
+    return jsonify(response), status_code  # Devolver la respuesta y el código de estado
