@@ -147,16 +147,13 @@ def create_user():
         rol = data.get('rol')
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
-        file = request.files['image']
         email = data.get('email')
-        # Convertir la imagen a un formato adecuado para el procesamiento
-        image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
 
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
         
-        result = createUser(nombre, apellido, int(dni), rol, horariosEntrada, horariosSalida, image,email)
+        result = createUser(nombre, apellido, int(dni), rol, horariosEntrada, horariosSalida,email)
         return jsonify(result), 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
@@ -173,15 +170,12 @@ def update_user(user_id):
         rol = data.get('rol')
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
-        image = request.files['image']
         email = data.get('email')
-        # Convertir la imagen a un formato adecuado para el procesamiento        
-        image = cv2.imdecode(np.frombuffer(image.read(), np.uint8), cv2.IMREAD_UNCHANGED)
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
 
-        result = updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image, email)
+        result = updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, email)
         return jsonify(result), 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
