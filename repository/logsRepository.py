@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from mongoDB import db
 from bson import ObjectId
+from mongoDB import notificarIncompatibilidadEnRegistro
 
 
 def registrarLog(horario,nombre,apellido,dni,estado,tipo):
@@ -57,3 +58,17 @@ def obtener_logs_dia_especifico(fecha):
         resultados_json.append(resultado)
 
     return resultados_json  # Devolver como una lista de diccionarios
+
+def chequearExistenciaDeUsuario(nombre, apellido, dni):
+    collection = db['usuarios']
+    usuario = collection.find_one({
+        'dni': dni,
+        'nombre': nombre,
+        'apellido': apellido
+    })
+    
+    if usuario:
+        print(f"El usuario {nombre} {apellido} con DNI {dni} ya existe en la base de datos.")
+    else:
+        print(f"El usuario {nombre} {apellido} con DNI {dni} no existe en la base de datos.")
+        notificarIncompatibilidadEnRegistro(nombre, apellido, dni)

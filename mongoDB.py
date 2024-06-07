@@ -229,6 +229,29 @@ def generar_cuerpo_notificacion_corte(horarioDesconexion, horarioReconexion, can
     )
     return cuerpo
 
+def notificarIncompatibilidadEnRegistro(nombre,apellido,dni):
+    asunto="Usuario ingresado mediante registro offline inexistente en la base de datos."
+    collection = db['usuarios']
+    personal_jerarquico = collection.find({"rol": "personal jerárquico"})
+    emails = [user['email'] for user in personal_jerarquico]
+
+    mensaje=generar_cuerpo_notificacion_corte(nombre,apellido,dni)
+
+    for email in emails:
+        send_email(email, asunto, mensaje)
+
+def generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni):       
+    cuerpo = (
+        f"Se ha detectado una incompatibilidad con un registro offline:\n\n"
+        f"El visitante ingresado no esta registrado en la base de datos\n"
+        f"Usuario: {nombre}"
+        f" {apellido}\n"
+        f"DNI: {dni}\n\n"       
+        f"Log3rApp by AlphaTeam"
+    )
+    return cuerpo
+
+
 
 def send_email(to_email, subject, message):
 
