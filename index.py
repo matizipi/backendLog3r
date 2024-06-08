@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,timedelta
 import os
 import subprocess
 from dotenv import load_dotenv
@@ -10,12 +10,15 @@ import cv2
 import numpy as np
 #import captureFace,training 
 
-from mongoDB import (    
-    unionPersonaEspacios,    
-    createUser,
-    updateUser,
-    deleteUser,
-    getUsers
+from mongoDB import (
+    searchMdb, 
+    unionPersonaEspacios, 
+    createUser, 
+    updateUser, 
+    deleteUser, 
+    getUsers,
+    notificarCorte
+    
 )
 
 import comparacionCaras
@@ -26,6 +29,8 @@ from api.imagenesApi import imagenes_bp
 from api.licenciasApi import licencias_bp
 from api.profesoresApi import profesores_bp
 from api.logsApi import logs_bp
+from api.rolesApi import roles_bp
+from api.configApi import config_bp
 
 ## variable global para ir guardando el ultimo label usado en el modelo
 ultimo_Label = 0
@@ -45,7 +50,8 @@ app.register_blueprint(imagenes_bp)
 app.register_blueprint(licencias_bp, url_prefix = '/api/licencias')
 app.register_blueprint(profesores_bp, url_prefix = '/api/profesores')
 app.register_blueprint(logs_bp, url_prefix = '/api/logs')
-
+app.register_blueprint(roles_bp, url_prefix = '/api/roles')
+app.register_blueprint(config_bp, url_prefix = '/api/config')
 
 @app.route('/api/authentication', methods=['POST'])
 def predict():
@@ -141,16 +147,13 @@ def create_user():
         rol = data.get('rol')
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
-        file = request.files['image']
         email = data.get('email')
-        # Convertir la imagen a un formato adecuado para el procesamiento
-        image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
 
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
         
-        result = createUser(nombre, apellido, int(dni), rol, horariosEntrada, horariosSalida, image,email)
+        result = createUser(nombre, apellido, int(dni), rol, horariosEntrada, horariosSalida,email)
         return jsonify(result), 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
@@ -167,15 +170,12 @@ def update_user(user_id):
         rol = data.get('rol')
         horariosEntrada = data.get('horariosEntrada')
         horariosSalida = data.get('horariosSalida')
-        image = request.files['image']
         email = data.get('email')
-        # Convertir la imagen a un formato adecuado para el procesamiento        
-        image = cv2.imdecode(np.frombuffer(image.read(), np.uint8), cv2.IMREAD_UNCHANGED)
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
 
-        result = updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, image, email)
+        result = updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, email)
         return jsonify(result), 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
@@ -219,7 +219,32 @@ def setCerteza():
         return "Cambio denegado", 400
     except Exception as e:
         print(e)
-        return "Error de entrada", 500
+        return "Error de entrada",500
+    
+@app.route('/api/authentication/cortes', methods=['POST'])
+def notificar_cortes_conexion():
+    data = request.form    
+    horario_desconexion_str = data.get('horarioDesconexion')  
+    horario_reconexion_str = data.get('horarioReconexion')  
+    cantRegSincronizados = data.get('cantRegSincronizados')
+    periodoDeCorte_str=data.get('periodoDeCorte')
+    try:
+      
+        horarioDesconexion = datetime.strptime(horario_desconexion_str, '%Y-%m-%d %H:%M:%S')
+        horarioReconexion = datetime.strptime(horario_reconexion_str, '%Y-%m-%d %H:%M:%S')
+
+         # Convertir periodoDeCorte_str a timedelta
+        periodoDeCorte_time = datetime.strptime(periodoDeCorte_str, '%H:%M:%S')
+        periodoDeCorte = timedelta(hours=periodoDeCorte_time.hour, minutes=periodoDeCorte_time.minute, seconds=periodoDeCorte_time.second)
+
+        result = notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
+
+        return jsonify(result), 200
+    
+    except Exception as e:
+        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        return jsonify({'error': mensaje_error}), 500 
+    
 
 
 if __name__ == "__main__":
