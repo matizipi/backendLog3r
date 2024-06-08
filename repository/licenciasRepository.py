@@ -30,10 +30,12 @@ def getLicenses():
 
 def newLicense(userId,fechaDesde,fechaHasta):
     collection = db['licencias']
-    collection.insert_one({
+    result = collection.insert_one({
         "fechaDesde": fechaDesde,
         "fechaHasta": fechaHasta,
-        "userId":  ObjectId(userId)})
+        "userId":  userId}) 
+    idstr = str(result.inserted_id)    
+    return {'licenciaId': idstr}   
     
 
 def deleteLicencia(licencia_id):
