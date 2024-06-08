@@ -58,8 +58,6 @@ def authentication():
         
         # validaciones de licencia y horarios
         user_licenses = getUserLicenses(user_finded['_id'])
-        # print(user_finded)
-        print(user_licenses)
 
         dt = datetime.now()
         fecha_actual = dt.date()
@@ -79,8 +77,6 @@ def authentication():
                 break
         
         user_finded['horarios'].sort(key=(lambda horarios: horarios['tipo'])) # ordenar por lunes a viernes, y luego sabado
-        for horarios in user_finded['horarios']:
-            print(horarios)
         
         ingreso_horario_invalido = True
 
