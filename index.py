@@ -216,8 +216,8 @@ def login2():
                 )
             evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
             print('Ingreso irregular por horario. Evento creado')
-        result_serializable = json.loads(json_util.dumps(result))
-        return jsonify({'message': 'Autenticación exitosa', 'data': result_serializable})
+
+        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
 
     return jsonify({'message': 'Rol incorrecto'}), 401
 
