@@ -19,7 +19,7 @@ def get_licences():
 @licencias_bp.route('/', methods=['POST'])
 def license():
     data = request.json    
-    user_id = data.get('user_id')  
+    user_id = data.get('userId')  
     fechaDesde = data.get('fechaDesde')
     fechaHasta = data.get('fechaHasta')     
     try:

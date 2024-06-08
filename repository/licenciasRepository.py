@@ -22,7 +22,7 @@ def newLicense(userId,fechaDesde,fechaHasta):
     result = collection.insert_one({
         "fechaDesde": fechaDesde,
         "fechaHasta": fechaHasta,
-        "userId":  ObjectId(userId)}) 
+        "userId":  userId}) 
     idstr = str(result.inserted_id)    
     return {'licenciaId': idstr}   
     
