@@ -2,13 +2,24 @@ from bson import ObjectId
 from mongoDB import db
 from datetime import datetime
 
-
-
+def getUserLicenses(user_id):
+    collection = db['licencias']
+    cursor = collection.find({'userId': user_id})
+    licenses = list(cursor)
+    cursor.close()
+    
+    # Convertir ObjectId a cadena para que sea serializable
+    for license in licenses:
+        license['_id'] = str(license['_id'])
+        license['userId'] = str(license['userId'])
+    
+    return licenses
 
 def getLicenses():
     collection = db['licencias']
     cursor = collection.find()
     licenses = list(cursor)
+    cursor.close()
     
     # Convertir ObjectId a cadena para que sea serializable
     for license in licenses:
@@ -22,7 +33,7 @@ def newLicense(userId,fechaDesde,fechaHasta):
     collection.insert_one({
         "fechaDesde": fechaDesde,
         "fechaHasta": fechaHasta,
-        "userId":  ObjectId(userId)})   
+        "userId":  ObjectId(userId)})
     
 
 def deleteLicencia(licencia_id):

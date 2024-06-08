@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from repository.imagenesRepository import get_imagenes_repository, post_imagenes_repository, put_imagenes_repository, delete_imagenes_repository
-from repository.usuariosRepository import get_usuario_repository
+from repository.usersRepository import get_user_repository
 
 imagenes_bp = Blueprint('imagenes', __name__)
 
@@ -27,7 +27,7 @@ def post_imagenes():
     if not userId:
         return jsonify({"status": "error", "message": "Please enter valid userId"}), 400
 
-    usuario = get_usuario_repository(userId)
+    usuario = get_user_repository(userId)
     if not usuario:
         return jsonify({"status": "error", "message": "El usuario ingresado no existe"}), 400
 
