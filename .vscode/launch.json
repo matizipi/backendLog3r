@@ -46,7 +46,15 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "logToFile": true
+            "logToFile": true,
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "host": "127.0.0.1"
         }
-    ]
+        
 }
