@@ -1,49 +1,39 @@
-from datetime import datetime,timedelta
 import os
 import subprocess
+import json
+
 from dotenv import load_dotenv
 
+import utils
 load_dotenv()
-import cv2.data
+
+from datetime import datetime, timedelta
 from flask import Flask, jsonify, request
-import cv2
-import numpy as np
-#import captureFace,training 
-
-from mongoDB import (
-    searchMdb, 
-    unionPersonaEspacios, 
-    createUser, 
-    updateUser, 
-    deleteUser, 
-    getUsers,
-    notificarCorte
-    
-)
-
-import comparacionCaras
-import json
+from flask_cors import CORS
 from bson import json_util
 from waitress import serve
+
+from repository.eventosRepository import post_eventos_repository
+from repository.licenciasRepository import getUserLicenses
+
+import comparacionCaras
+from mongoDB import notificarCorte
 from api.imagenesApi import imagenes_bp
 from api.licenciasApi import licencias_bp
 from api.profesoresApi import profesores_bp
 from api.logsApi import logs_bp
 from api.rolesApi import roles_bp
 from api.configApi import config_bp
-
-## variable global para ir guardando el ultimo label usado en el modelo
-ultimo_Label = 0
-
-from flask_cors import CORS
+from api.usersApi import users_bp
+from api.horariosApi import horarios_bp
+from api.eventosApi import eventos_bp
 
 app = Flask(__name__)
 cors = CORS(app)
 
-
 @app.route('/')
 def home():
-    return jsonify({"message": "home"}), 200
+    return jsonify({'message': 'home'}), 200
 
 
 app.register_blueprint(imagenes_bp)
@@ -52,175 +42,186 @@ app.register_blueprint(profesores_bp, url_prefix = '/api/profesores')
 app.register_blueprint(logs_bp, url_prefix = '/api/logs')
 app.register_blueprint(roles_bp, url_prefix = '/api/roles')
 app.register_blueprint(config_bp, url_prefix = '/api/config')
+app.register_blueprint(users_bp, url_prefix = '/api/users')
+app.register_blueprint(horarios_bp, url_prefix = '/api/horarios')
+app.register_blueprint(eventos_bp, url_prefix = '/api/eventos')
 
 @app.route('/api/authentication', methods=['POST'])
-def predict():
-    try:
-        file = request.files['image']
-        # Convertir la imagen a un formato adecuado para el procesamiento
-        image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
-
-        userFinded = comparacionCaras.compararConDB(image)
-        file.close()
-        if userFinded == -1:
-            return jsonify({"message": "Autenticación fallida: Usuario No Registrado"}), 401
-        user_con_lugares = unionPersonaEspacios(userFinded)
-        result_serializable = json.loads(json_util.dumps(user_con_lugares))
-
-        return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
-    except Exception as e:
-        # If an error occurs, return a 500 HTTP status code and an error message
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        print(mensaje_error)
-        return jsonify({'error': mensaje_error}), 500
-
-
-@app.route('/api/authentication2', methods=['POST'])
-def authentication2():
+def authentication():
     try:
         data = request.json  # JSON payload containing the array of floats
         embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
-        # print(embeddings)
 
-        result = comparacionCaras.compararEmbeddingConDB(embeddings)
-        if result == -1:
-            return jsonify({"message": "Autenticación fallida:Usuario No Registro"}), 401
-        # print(result["rol"])
-        # result_serializable = json.loads(json_util.dumps(result))
-        user_con_lugares = unionPersonaEspacios(result)
-        result_serializable = json.loads(json_util.dumps(user_con_lugares))
+        user_finded = comparacionCaras.compararEmbeddingConDB(embeddings)
+        if user_finded is None or user_finded == -1:
+            return jsonify({'message': 'Autenticación fallida:Usuario No Registro'}), 401
+        
+        # validaciones de licencia y horarios
+        user_licenses = getUserLicenses(user_finded['_id'])
 
-        return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
+        dt = datetime.now()
+        fecha_actual = dt.date()
+        # Validar si la fecha actual está en algún rango de horario
+        
+        for license in user_licenses:
+            fecha_desde = datetime.strptime(license['fechaDesde'], '%Y-%m-%d').date()
+            fecha_hasta = datetime.strptime(license['fechaHasta'], '%Y-%m-%d').date()
+
+            if fecha_desde <= fecha_actual <= fecha_hasta:
+                active_license = {
+                    'fechaDesde': license['fechaDesde'],
+                    'fechaHasta': license['fechaHasta'],
+                }
+                evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
+                print('Ingreso irregular por licencia. Evento creado')
+                break
+        
+        user_finded['horarios'].sort(key=(lambda horarios: horarios['tipo'])) # ordenar por lunes a viernes, y luego sabado
+        
+        ingreso_horario_invalido = True
+
+        weekday = fecha_actual.weekday() # 0 = lunes, ..., 6 = domingo
+        if weekday == 6:
+            print('Ingreso irregular por día domingo')
+            ingreso_horario_invalido = True
+        else:
+            i = 0
+            if weekday < 5: # lunes a viernes
+                if len(user_finded['horarios'] > 0):
+                    while user_finded['horarios'][i]['tipo'] == 'lunes a viernes':
+                        horario_entrada = user_finded['horarios'][i]['horarioEntrada']
+                        horario_salida = user_finded['horarios'][i]['horarioSalida']
+
+                        if horarioValido(dt, horario_entrada, horario_salida):
+                            ingreso_horario_invalido = False
+                            break
+
+                        i+=1
+            else: # sabado
+                while i <= len(user_finded['horarios']) - 1:
+                    if user_finded['horarios'][i]['tipo'] == 'sabado':
+                        horario_entrada = user_finded['horarios'][i]['horarioEntrada']
+                        horario_salida = user_finded['horarios'][i]['horarioSalida']
+
+                        if horarioValido(dt, horario_entrada, horario_salida):
+                            ingreso_horario_invalido = False
+                            break
+                    i+=1
+        
+        if ingreso_horario_invalido:
+            horarios_db = []
+            for i in range(len(user_finded['horarios'])):
+                horarios_db.append({
+                    'horarioEntrada': user_finded['horarios'][i]['horarioEntrada'],
+                    'horarioSalida': user_finded['horarios'][i]['horarioSalida'],
+                    'tipo': user_finded['horarios'][i]['tipo'],
+                    }
+                )
+            evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
+            print('Ingreso irregular por horario. Evento creado')
+            
+        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
+    except RuntimeError as e:
+        return jsonify({'message': e.args[0]}), 400
     except Exception as e:
         # If an error occurs, return a 500 HTTP status code and an error message
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        mensaje_error = 'Error interno en el servidor: {}'.format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
 
+def horarioValido(dt_actual: datetime, horario_entrada: str, horario_salida: str):
+    dt_local = utils.utcToArgentina(dt_actual)
+    hora_entrada, minuto_entrada = utils.getHoraMinutoFromHorario(horario_entrada)
+    hora_salida, minuto_salida = utils.getHoraMinutoFromHorario(horario_salida)
+
+    dt_entrada = datetime(dt_local.year, dt_local.month, dt_local.day, (hora_entrada + 3) % 24, minuto_entrada)
+    dt_salida = datetime(dt_local.year, dt_local.month, dt_local.day, (hora_salida + 3) % 24 , minuto_salida)
+
+    if utils.utcToArgentina(dt_entrada) <= dt_local <= utils.utcToArgentina(dt_salida):
+        return True
+    else:
+        return False
+
+
 @app.route('/api/login', methods=['POST'])
-def login():
-    file = request.files['image']
-    # Convertir la imagen a un formato adecuado para el procesamiento
-    image = cv2.imdecode(np.frombuffer(file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
-
-    result = comparacionCaras.compararConDB(image)
-    file.close()
-    if result == -1:
-        return jsonify({"message": "Autenticación fallida:Usuario No Registro"}), 401
-
-    if "seguridad" in result["rol"] or "recursos humanos" in result["rol"] or "administrador" in result["rol"]:
-        result_serializable = json.loads(json_util.dumps(result))
-        return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
-
-    return jsonify({"message": "Rol incorrecto"}), 401
-
-
-@app.route('/api/login2', methods=['POST'])
 def login2():
     data = request.json  # JSON payload containing the array of floats
     embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
 
-    result = comparacionCaras.compararEmbeddingConDB(embeddings)
-    if result == -1:
-        return jsonify({"message": "Autenticación fallida:Usuario No Registro"}), 401
+    user_finded = comparacionCaras.compararEmbeddingConDB(embeddings)
+    if user_finded is None or user_finded == -1:
+        return jsonify({'message': 'Autenticación fallida:Usuario No Registro'}), 401
 
-    if "seguridad" in result["rol"] or "recursos humanos" in result["rol"] or "administrador" in result["rol"]:
-        result_serializable = json.loads(json_util.dumps(result))
-        return jsonify({"message": "Autenticación exitosa", "data": result_serializable})
+    if 'seguridad' in user_finded['rol'] or 'recursos humanos' in user_finded['rol'] or 'administrador' in user_finded['rol']:
+        # validaciones de licencia y horarios
+        user_licenses = getUserLicenses(user_finded['_id'])
 
-    return jsonify({"message": "Rol incorrecto"}), 401
-
-
-
-def launch_script_automatic_log():
-    # Lanza el script salidaAutomatica.py en segundo plano
-    process = subprocess.Popen(["python", "salidaAutomatica.py"])
-
-
-@app.route('/api/users', methods=['POST'])
-def create_user():
-    data = request.form
-    try:
-        nombre = data.get('nombre')
-        apellido = data.get('apellido')
-        dni = data.get('dni')
-        rol = data.get('rol')
-        horariosEntrada = data.get('horariosEntrada')
-        horariosSalida = data.get('horariosSalida')
-        email = data.get('email')
-
-        # Validar campos requeridos
-        if not all([nombre, apellido, dni, rol]):
-            return jsonify({"error": "Faltan datos obligatorios"}), 400
+        dt = datetime.now()
+        fecha_actual = dt.date()
+        # Validar si la fecha actual está en algún rango de horario
         
-        result = createUser(nombre, apellido, int(dni), rol, horariosEntrada, horariosSalida,email)
-        return jsonify(result), 200
-    except Exception as e:
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        return jsonify({'error': mensaje_error}), 500
+        for license in user_licenses:
+            fecha_desde = datetime.strptime(license['fechaDesde'], '%Y-%m-%d').date()
+            fecha_hasta = datetime.strptime(license['fechaHasta'], '%Y-%m-%d').date()
+
+            if fecha_desde <= fecha_actual <= fecha_hasta:
+                active_license = {
+                    'fechaDesde': license['fechaDesde'],
+                    'fechaHasta': license['fechaHasta'],
+                }
+                evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
+                print('Ingreso irregular por licencia. Evento creado')
+                break
+        
+        user_finded['horarios'].sort(key=(lambda horarios: horarios['tipo'])) # ordenar por lunes a viernes, y luego sabado
+        
+        ingreso_horario_invalido = True
+
+        weekday = fecha_actual.weekday() # 0 = lunes, ..., 6 = domingo
+        if weekday == 6:
+            print('Ingreso irregular por día domingo')
+            ingreso_horario_invalido = True
+        else:
+            i = 0
+            if weekday < 5: # lunes a viernes
+                if len(user_finded['horarios'] > 0):
+                    while user_finded['horarios'][i]['tipo'] == 'lunes a viernes':
+                        horario_entrada = user_finded['horarios'][i]['horarioEntrada']
+                        horario_salida = user_finded['horarios'][i]['horarioSalida']
+
+                        if horarioValido(dt, horario_entrada, horario_salida):
+                            ingreso_horario_invalido = False
+                            break
+
+                        i+=1
+            else: # sabado
+                while i <= len(user_finded['horarios']) - 1:
+                    if user_finded['horarios'][i]['tipo'] == 'sabado':
+                        horario_entrada = user_finded['horarios'][i]['horarioEntrada']
+                        horario_salida = user_finded['horarios'][i]['horarioSalida']
+
+                        if horarioValido(dt, horario_entrada, horario_salida):
+                            ingreso_horario_invalido = False
+                            break
+                    i+=1
+        
+        if ingreso_horario_invalido:
+            horarios_db = []
+            for i in range(len(user_finded['horarios'])):
+                horarios_db.append({
+                    'horarioEntrada': user_finded['horarios'][i]['horarioEntrada'],
+                    'horarioSalida': user_finded['horarios'][i]['horarioSalida'],
+                    'tipo': user_finded['horarios'][i]['tipo'],
+                    }
+                )
+            evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
+            print('Ingreso irregular por horario. Evento creado')
+
+        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
+
+    return jsonify({'message': 'Rol incorrecto'}), 401
 
 
-@app.route('/api/users/<user_id>', methods=['PUT'])
-def update_user(user_id):
-    data = request.form
-    try:
-        nombre = data.get('nombre')
-        apellido = data.get('apellido')
-        dni = data.get('dni')
-        rol = data.get('rol')
-        horariosEntrada = data.get('horariosEntrada')
-        horariosSalida = data.get('horariosSalida')
-        email = data.get('email')
-        # Validar campos requeridos
-        if not all([nombre, apellido, dni, rol]):
-            return jsonify({"error": "Faltan datos obligatorios"}), 400
-
-        result = updateUser(user_id, nombre, apellido, dni, rol, horariosEntrada, horariosSalida, email)
-        return jsonify(result), 200
-    except Exception as e:
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        return jsonify({'error': mensaje_error}), 500
-
-
-@app.route('/api/users/<user_id>', methods=['DELETE'])
-def delete_user(user_id):
-    try:
-        result = deleteUser(user_id)
-        return jsonify(result), 200
-    except Exception as e:
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        return jsonify({'error': mensaje_error}), 500
-    
-
-@app.route('/api/users', methods=['GET'])
-def get_users():
-    try:
-        result = getUsers()
-        return jsonify(result), 200
-    except Exception as e:
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
-        return jsonify({'error': mensaje_error}), 500
-
-   
- 
-
-@app.route('/api/certeza', methods=['GET'])
-def getCerteza():
-    return comparacionCaras.getTHRESHOLD()
-
-
-@app.route('/api/certeza', methods=['POST'])
-def setCerteza():
-    umbral = request.form.get("THRESHOLD")
-
-    try:
-        if (comparacionCaras.setTHRESHOLD(request.form.get("THRESHOLD"))):
-            return "Cambio exitoso", 200
-        return "Cambio denegado", 400
-    except Exception as e:
-        print(e)
-        return "Error de entrada",500
-    
 @app.route('/api/authentication/cortes', methods=['POST'])
 def notificar_cortes_conexion():
     data = request.form    
@@ -242,12 +243,16 @@ def notificar_cortes_conexion():
         return jsonify(result), 200
     
     except Exception as e:
-        mensaje_error = "Error interno en el servidor: {}".format(str(e))
+        mensaje_error = 'Error interno en el servidor: {}'.format(str(e))
         return jsonify({'error': mensaje_error}), 500 
+
     
+def launch_script_automatic_log():
+    # Lanza el script salidaAutomatica.py en segundo plano
+    process = subprocess.Popen(['python', 'salidaAutomatica.py'])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # development
     # launch_script_automatic_log()
     port = os.getenv('PORT', 5000)  # provided by Railway

@@ -67,7 +67,7 @@ def delete_imagenes_repository(_id):
     )
 
     result = {
-        "deleted_count": result.deleted_count
+        "deletedCount": result.deleted_count
     }
 
     return result

@@ -5,13 +5,18 @@ from comparacionCaras import setTHRESHOLD
 
 config_bp = Blueprint('configuraciones', __name__)
 
+
 @config_bp.route('/', methods=['GET'])
 def get_configuraciones():
-    params = request.args
-    config_name = params.get("nombre")
-    configuraciones = get_config_repository(config_name)
-
+    configuraciones = get_config_repository(None)
     return jsonify(configuraciones)
+
+
+@config_bp.route('/<config_name>', methods=['GET'])
+def get_configuracion(config_name):
+    configuracion = get_config_repository(config_name)
+    return jsonify(configuracion[0] if len(configuracion) > 0 else None), 200 if len(configuracion) > 0 else 404
+
 
 @config_bp.route('/', methods=['POST'])
 def post_configuraciones():
@@ -33,6 +38,7 @@ def post_configuraciones():
       return jsonify({"status":"error","message":e.args[0]}), 400
     except Exception as e:
       return jsonify({"status":"error","message":e.args[0]}), 500
+
 
 @config_bp.route('/', methods=['PUT'])
 def put_configuraciones():
