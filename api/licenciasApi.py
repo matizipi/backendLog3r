@@ -1,4 +1,3 @@
-from ast import parse
 from flask import Blueprint, request, jsonify
 from repository.licenciasRepository import deleteLicencia, newLicense,getLicenses
 from datetime import datetime
@@ -19,8 +18,8 @@ def get_licences():
     
 @licencias_bp.route('/', methods=['POST'])
 def license():
-    data = request.form    
-    user_id = data.get('user_id')  
+    data = request.json    
+    user_id = data.get('userId')  
     fechaDesde = data.get('fechaDesde')
     fechaHasta = data.get('fechaHasta')     
     try:
@@ -50,7 +49,8 @@ def license():
         fechaDesde_str = fechaDesde.strftime('%Y-%m-%d')
         fechaHasta_str = fechaHasta.strftime('%Y-%m-%d')
 
-        resultado = newLicense(user_id,fechaDesde_str,fechaHasta_str)         
+        resultado = newLicense(user_id,fechaDesde_str,fechaHasta_str)                
+
         return jsonify(resultado), 200
     except Exception as e:
         # If an error occurs, return a 500 HTTP status code and an error message

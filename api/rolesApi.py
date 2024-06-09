@@ -1,15 +1,19 @@
 from flask import Blueprint, request, jsonify
-from repository.rolesRepository import get_roles_repository, post_roles_repository, put_roles_repository, delete_roles_repository
+from repository.rolesRepository import get_roles_repository,get_rol_repository, post_roles_repository, put_roles_repository, delete_roles_repository
 
 roles_bp = Blueprint('roles', __name__)
 
 @roles_bp.route('/', methods=['GET'])
 def get_roles():
-    params = request.args
-    role_id = params.get("_id")
-    roles = get_roles_repository(role_id)
-
+    roles = get_roles_repository()
     return jsonify(roles)
+
+
+@roles_bp.route('/<role_id>', methods=['GET'])
+def get_rol(role_id):
+    role = get_rol_repository(role_id)
+    return jsonify(role), 200 if role is not None else 404
+
 
 @roles_bp.route('/', methods=['POST'])
 def post_roles():
