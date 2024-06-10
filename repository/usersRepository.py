@@ -91,21 +91,23 @@ def create_user_repository(nombre, apellido, dni, rol, horarios, email):
     usuario_existente = collection.find_one({'$or': [{'dni': dni},{'email': email}]},)
     if usuario_existente:
         raise RuntimeError("El usuario ya existe en la base de datos con el id {}".format(usuario_existente['_id']))
-    
+
+    horarios_object = []
     for i in range(len(horarios)):
-        horarios[i] = ObjectId(horarios[i])
+        horarios_object.append(ObjectId(horarios[i]))
 
     new_user = {            
         'nombre': nombre,
         'apellido': apellido,
         'dni': int(dni),
         'rol': rol,
-        'horarios': horarios,
+        'horarios': horarios_object,
         'email': email
     }
     response = collection.insert_one(new_user)
     new_user['_id'] = str(response.inserted_id)
-    guardarHistorialUsuarios(nombre, apellido, dni, rol, horarios)
+    new_user['horarios'] = horarios
+    guardarHistorialUsuarios(nombre, apellido, dni, rol, horarios_object)
     return new_user
 
 

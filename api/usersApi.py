@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from repository.usersRepository import get_users_repository, get_user_repository, create_user_repository, update_user_repository, delete_user_repository
 users_bp = Blueprint('users', __name__)
 
-@users_bp.route('/', methods=['GET'])
+@users_bp.route('', methods=['GET'])
 def get_users():
     try:
         result = get_users_repository()
@@ -22,9 +22,9 @@ def get_user(user_id):
         return jsonify({'error': mensaje_error}), 500
 
 
-@users_bp.route('/', methods=['POST'])
+@users_bp.route('', methods=['POST'])
 def create_user():
-    data = request.form
+    data = request.json
     try:
         nombre = data.get('nombre')
         apellido = data.get('apellido')
@@ -37,10 +37,10 @@ def create_user():
         if not all([nombre, apellido, dni, rol, horarios]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
 
-        horarios_splitted = horarios.split('-')
+        # horarios_splitted = horarios.split('-')
         
-        new_user = create_user_repository(nombre, apellido, dni, rol, horarios_splitted, email)
-        return jsonify({'mensaje': 'Usuario creado'})
+        new_user = create_user_repository(nombre, apellido, dni, rol, horarios, email)
+        return jsonify(new_user)
         # return jsonify(result), 200
     except RuntimeError as e:
         return jsonify({'message': e.args[0]}), 400
@@ -51,7 +51,7 @@ def create_user():
 
 @users_bp.route('/<user_id>', methods=['PUT'])
 def update_user(user_id):
-    data = request.form
+    data = request.json
     try:
         nombre = data.get('nombre')
         apellido = data.get('apellido')
@@ -64,9 +64,9 @@ def update_user(user_id):
         if not all([nombre, apellido, dni, rol, horarios]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
         
-        horarios_splitted = horarios.split('-')
+        # horarios_splitted = horarios.split('-')
 
-        result = update_user_repository(user_id, nombre, apellido, dni, rol, horarios_splitted, email)
+        result = update_user_repository(user_id, nombre, apellido, dni, rol, horarios, email)
         return jsonify({'mensaje': 'Usuario actualizado' if result['modifiedCount'] > 0 else 'No se realizaron cambios'}), 200
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
