@@ -43,17 +43,28 @@ def obtener_logs_dia_especifico(fecha):
                     '$lt': fecha_fin
                 }
             }
+        },
+        {
+            '$project': {
+                'horarios': 0  # Excluir el campo 'horarios' si existe
+            }
         }
     ]
 
-    # Ejecutar el pipeline
-    resultados = list(collection.aggregate(pipeline))
-    print(f"Resultados encontrados: {resultados}")  # Depuración
-
+    
+    try:
+        # Ejecutar el pipeline
+        resultados = list(collection.aggregate(pipeline))
+    except Exception as e:
+        print(f"Error ejecutando el pipeline: {e}")
+        return []
+    
     # Convertir los resultados a un formato adecuado para JSON
     resultados_json = []
-    for resultado in resultados:
+    for resultado in resultados:        
         resultado['_id'] = str(resultado['_id'])  # Convertir ObjectId a string
+        if 'horarios' in resultado:
+            del resultado['horarios']  # Eliminar 'horarios' del resultado final
         resultados_json.append(resultado)
 
     return resultados_json  # Devolver como una lista de diccionarios
