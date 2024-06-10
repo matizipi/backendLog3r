@@ -6,7 +6,7 @@ from datetime import datetime
 licencias_bp = Blueprint('licencias', __name__)
 
 
-@licencias_bp.route('/', methods=['GET'])
+@licencias_bp.route('', methods=['GET'])
 def get_licences():
     try:
         result = getLicenses()
@@ -16,7 +16,7 @@ def get_licences():
         return jsonify({'error': mensaje_error}), 500
     
     
-@licencias_bp.route('/', methods=['POST'])
+@licencias_bp.route('', methods=['POST'])
 def license():
     data = request.json    
     user_id = data.get('userId')  
