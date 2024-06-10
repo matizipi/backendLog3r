@@ -85,7 +85,7 @@ def authentication():
         else:
             i = 0
             if weekday < 5: # lunes a viernes
-                if len(user_finded['horarios'] ) > 0:
+                if (len(user_finded['horarios']) > 0):
                     while user_finded['horarios'][i]['tipo'] == 'lunes a viernes':
                         horario_entrada = user_finded['horarios'][i]['horarioEntrada']
                         horario_salida = user_finded['horarios'][i]['horarioSalida']
@@ -182,7 +182,7 @@ def login2():
         else:
             i = 0
             if weekday < 5: # lunes a viernes
-                if len(user_finded['horarios'] )> 0:
+                if (len(user_finded['horarios']) > 0):
                     while user_finded['horarios'][i]['tipo'] == 'lunes a viernes':
                         horario_entrada = user_finded['horarios'][i]['horarioEntrada']
                         horario_salida = user_finded['horarios'][i]['horarioSalida']
