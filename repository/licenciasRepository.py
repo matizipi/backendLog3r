@@ -37,7 +37,10 @@ def newLicense(userId,fechaDesde,fechaHasta):
         "fechaHasta": fechaHasta,
         "userId":  userId}) 
     idstr = str(result.inserted_id)    
-    return {'licenciaId': idstr}   
+    return {'licenciaId': idstr,
+            "fechaDesde": fechaDesde,
+            "fechaHasta": fechaHasta,
+            "userId":  userId}   
     
 
 def deleteLicencia(licencia_id):
