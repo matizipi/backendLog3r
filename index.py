@@ -1,6 +1,5 @@
 import os
 import subprocess
-import json
 
 from dotenv import load_dotenv
 
@@ -10,7 +9,6 @@ load_dotenv()
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from bson import json_util
 from waitress import serve
 
 from repository.eventosRepository import post_eventos_repository

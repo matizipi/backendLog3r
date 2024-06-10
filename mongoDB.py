@@ -110,7 +110,7 @@ def generar_cuerpo_notificacion_corte(horarioDesconexion, horarioReconexion, can
         f"Horario de Desconexión: {horarioDesconexion}\n"
         f"Horario de Reconexión: {horarioReconexion}\n"
         f"Cantidad de Registros Sincronizados: {cantRegSincronizados}\n\n"
-        f"Tiempo total sin conexión de internet: {periodoDeCorte} (horas\minutos\segundos) \n\n"
+        f"Tiempo total sin conexión de internet: {periodoDeCorte} (horas\\minutos\\segundos) \n\n"
         f"Log3rApp by AlphaTeam"
     )
     return cuerpo

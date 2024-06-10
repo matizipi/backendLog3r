@@ -1,4 +1,5 @@
 from bson import ObjectId
+import pymongo
 from mongoDB import db
 from datetime import datetime
 
@@ -17,9 +18,10 @@ def getUserLicenses(user_id):
 
 def getLicenses():
     collection = db['licencias']
-    cursor = collection.find()
+    # Realiza la consulta ordenada por el campo 'fechaDesde' de menor a mayor
+    cursor = collection.find().sort('fechaDesde', pymongo.ASCENDING)
     licenses = list(cursor)
-    cursor.close()
+    cursor.close()    
     
     # Convertir ObjectId a cadena para que sea serializable
     for license in licenses:
@@ -35,7 +37,10 @@ def newLicense(userId,fechaDesde,fechaHasta):
         "fechaHasta": fechaHasta,
         "userId":  userId}) 
     idstr = str(result.inserted_id)    
-    return {'licenciaId': idstr}   
+    return {'licenciaId': idstr,
+            "fechaDesde": fechaDesde,
+            "fechaHasta": fechaHasta,
+            "userId":  userId}   
     
 
 def deleteLicencia(licencia_id):
