@@ -6,7 +6,7 @@ from comparacionCaras import setTHRESHOLD
 config_bp = Blueprint('configuraciones', __name__)
 
 
-@config_bp.route('/', methods=['GET'])
+@config_bp.route('', methods=['GET'])
 def get_configuraciones():
     configuraciones = get_config_repository(None)
     return jsonify(configuraciones)
@@ -18,7 +18,7 @@ def get_configuracion(config_name):
     return jsonify(configuracion[0] if len(configuracion) > 0 else None), 200 if len(configuracion) > 0 else 404
 
 
-@config_bp.route('/', methods=['POST'])
+@config_bp.route('', methods=['POST'])
 def post_configuraciones():
     data = request.json
     config_name = data.get("nombre")
@@ -40,7 +40,7 @@ def post_configuraciones():
       return jsonify({"status":"error","message":e.args[0]}), 500
 
 
-@config_bp.route('/', methods=['PUT'])
+@config_bp.route('', methods=['PUT'])
 def put_configuraciones():
     data = request.json
     
@@ -61,7 +61,7 @@ def put_configuraciones():
       return jsonify({"message":e.args[0]}), 500
 
 
-@config_bp.route('/', methods=['DELETE'])
+@config_bp.route('', methods=['DELETE'])
 def delete_configuraciones():
     data = request.json
     nombre = data.get("nombre")
