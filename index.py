@@ -1,6 +1,5 @@
 import os
 import subprocess
-import json
 
 from dotenv import load_dotenv
 
@@ -10,7 +9,6 @@ load_dotenv()
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from bson import json_util
 from waitress import serve
 
 from repository.eventosRepository import post_eventos_repository
@@ -87,7 +85,7 @@ def authentication():
         else:
             i = 0
             if weekday < 5: # lunes a viernes
-                if len(user_finded['horarios'] > 0):
+                if len(user_finded['horarios'] ) > 0:
                     while user_finded['horarios'][i]['tipo'] == 'lunes a viernes':
                         horario_entrada = user_finded['horarios'][i]['horarioEntrada']
                         horario_salida = user_finded['horarios'][i]['horarioSalida']
@@ -184,7 +182,7 @@ def login2():
         else:
             i = 0
             if weekday < 5: # lunes a viernes
-                if len(user_finded['horarios'] > 0):
+                if len(user_finded['horarios'] )> 0:
                     while user_finded['horarios'][i]['tipo'] == 'lunes a viernes':
                         horario_entrada = user_finded['horarios'][i]['horarioEntrada']
                         horario_salida = user_finded['horarios'][i]['horarioSalida']
