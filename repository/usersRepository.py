@@ -141,7 +141,7 @@ def update_user_repository(user_id, nombre, apellido, dni, rol, horarios, email)
         }      
         campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
         normalizarDatosEnLogs(json_usuario_original,campos_modificados)
-        notificarCambioDeTitularidad(json_usuario_original,json_usuario_modificado)
+        notificarCambioDeTitularidad(nombre,apellido,json_usuario_original,json_usuario_modificado)
     
     return { 'modifiedCount': result.modified_count }
 

@@ -68,19 +68,19 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)  
 
-def notificarCambioDeTitularidad(json_usuario_original,json_usuario_modificado):
+def notificarCambioDeTitularidad(nombre,apellido,json_usuario_original,json_usuario_modificado):
     asunto="Notificación sobre cambio de titularidad"
     collection = db['usuarios']
     personal_jerarquico = collection.find({"rol": "personal jerárquico"})
     emails = [user['email'] for user in personal_jerarquico]
 
-    mensaje=generar_cuerpo_cambio_titularidad(json_usuario_original,json_usuario_modificado)
+    mensaje=generar_cuerpo_cambio_titularidad(nombre,apellido,json_usuario_original,json_usuario_modificado)
 
     for email in emails:
         send_email(email, asunto, mensaje)
 
 
-def generar_cuerpo_cambio_titularidad(original, modificado):
+def generar_cuerpo_cambio_titularidad(nombre,apellido,original, modificado):
     cambios = []
     for key in original:
         if key in modificado and original[key] != modificado[key]:
@@ -89,7 +89,7 @@ def generar_cuerpo_cambio_titularidad(original, modificado):
     if not cambios:
         return "No se han realizado modificaciones."
     
-    cuerpo = "Se han realizado los siguientes cambios en la información del usuario:\n\n"
+    cuerpo = f"Se han realizado los siguientes cambios en la información del usuario:\n\n{nombre} {apellido}\n"
     cuerpo += "\n".join(cambios)
     return cuerpo
 
