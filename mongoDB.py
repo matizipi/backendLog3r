@@ -130,7 +130,7 @@ def generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni):
     cuerpo = (
         f"Se ha detectado una incompatibilidad con un registro offline:\n\n"
         f"El visitante ingresado no esta registrado en la base de datos\n"
-        f"Usuario: {nombre} {apellido}"
+        f"Usuario: {nombre} {apellido}\n"
         f"DNI: {dni}\n\n"       
         f"Log3rApp by AlphaTeam"
     )
