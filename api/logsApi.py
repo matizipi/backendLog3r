@@ -22,7 +22,7 @@ def get_logs():
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
 
-@logs_bp.route('/dia', methods=['GET'])
+@logs_bp.route('/day', methods=['GET'])
 def get_logs_dia():
     fecha_str = request.args.get('fecha')
     if not fecha_str:
