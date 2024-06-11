@@ -1,5 +1,7 @@
 import os
+import signal
 import subprocess
+import sys
 
 from dotenv import load_dotenv
 
@@ -10,12 +12,12 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from waitress import serve
-
+from database.connection import client
 from repository.eventosRepository import post_eventos_repository
 from repository.licenciasRepository import getUserLicenses
+from repository.usersRepository import notificarCorte
 
 import comparacionCaras
-from mongoDB import notificarCorte
 from api.imagenesApi import imagenes_bp
 from api.licenciasApi import licencias_bp
 from api.profesoresApi import profesores_bp
@@ -28,6 +30,18 @@ from api.eventosApi import eventos_bp
 
 app = Flask(__name__)
 cors = CORS(app)
+
+salida_automatica_subprocess = None
+def signal_handler(sig, frame):
+    print(sig)
+    client.close()
+    print(salida_automatica_subprocess)
+    if salida_automatica_subprocess is not None:
+        salida_automatica_subprocess.send_signal(signal.SIGINT)
+    print('Server closed!')
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 @app.route('/')
 def home():
@@ -247,7 +261,8 @@ def notificar_cortes_conexion():
     
 def launch_script_automatic_log():
     # Lanza el script salidaAutomatica.py en segundo plano
-    process = subprocess.Popen(['python', 'salidaAutomatica.py'])
+    global salida_automatica_subprocess
+    salida_automatica_subprocess = subprocess.Popen(['python', 'salidaAutomatica.py'])
 
 
 if __name__ == '__main__':

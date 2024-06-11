@@ -1,7 +1,7 @@
 import math
-from mongoDB import getImageEmbeddings
 from repository.configRepository import get_config_repository
 from repository.usersRepository import get_user_repository
+from repository.imagenesRepository import get_image_embeddings
 
 THRESHOLD = get_config_repository('certeza')[0]['valor']
 
@@ -10,7 +10,7 @@ def compararEmbeddingConDB(embedding_input):
         return -1
 
     user = -1
-    cursor = getImageEmbeddings()
+    cursor = get_image_embeddings()
     max_imagen_similitude = -1
     max_similitude = 0
     for imagen in cursor:

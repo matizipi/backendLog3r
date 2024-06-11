@@ -1,6 +1,6 @@
 from bson import ObjectId
 import pymongo
-from mongoDB import db
+from database.connection import db
 from datetime import datetime
 
 def getUserLicenses(user_id):

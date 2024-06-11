@@ -1,3 +1,5 @@
+import signal
+import sys
 import logging
 from pymongo import MongoClient, errors
 from datetime import datetime, timedelta, timezone
@@ -6,7 +8,7 @@ import certifi
 import os
 from dotenv import load_dotenv
 import time
-from mongoDB import registrarLog
+from repository.logsRepository import registrarLog
 
 load_dotenv()
 
@@ -40,6 +42,13 @@ except errors.ConfigurationError as err:
 except Exception as err:
     logging.error(f"Error inesperado al conectar a MongoDB: {err}")
     exit(1)
+
+def signal_handler(sig, frame):
+    print(sig)
+    client.close()
+    print('finish salidaAutomatica.py!')
+    sys.exit(0)
+signal.signal(signal.SIGINT, signal_handler)
 
 def automatic_log_out():
     start = time.time()

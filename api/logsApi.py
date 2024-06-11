@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from repository.logsRepository import obtener_logs_dia_especifico, registrarLog
+from repository.usersRepository import get_last_estado_by_dni
 from datetime import datetime
-from mongoDB import getLastEstadoByDni
 
 # Crear instancia Blueprint con el nombre 'logs'
 logs_bp = Blueprint('logs', __name__)
@@ -67,5 +67,5 @@ def get_last_estado():
     if not dni:
         return jsonify({'error': 'Falta el parámetro dni'}), 400
 
-    response, status_code = getLastEstadoByDni(dni)  # Obtener la respuesta y el código de estado
+    response, status_code = get_last_estado_by_dni(dni)  # Obtener la respuesta y el código de estado
     return jsonify(response), status_code  # Devolver la respuesta y el código de estado

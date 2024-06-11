@@ -4,4 +4,6 @@ WORKDIR /app
 
 COPY . .
 
+STOPSIGNAL SIGINT
+
 CMD ["python", "index.py"]
