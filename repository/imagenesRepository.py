@@ -1,8 +1,14 @@
 from datetime import datetime
 
-from mongoDB import db
+from database.connection import db
 from bson import ObjectId
 
+def get_image_embeddings():
+    # Realizar operaciones con la base de datos MongoDB
+    # Por ejemplo, puedes obtener una colección y devolver algunos documentos
+    collection = db['imagenes']
+    cursor = collection.find({})
+    return cursor
 
 def get_imagenes_repository(user_id):
     collection = db['imagenes']

@@ -1,4 +1,4 @@
-from mongoDB import db
+from database.connection import db
 
 def get_config_repository(config_name):
     collection = db['configuraciones']

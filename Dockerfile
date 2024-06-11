@@ -4,4 +4,6 @@ WORKDIR /app
 
 COPY . .
 
+STOPSIGNAL SIGINT
+
 CMD ["waitress-serve", "--call", "index:deploy_server"]

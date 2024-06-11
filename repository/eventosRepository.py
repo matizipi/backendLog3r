@@ -1,7 +1,6 @@
 from datetime import datetime
-from mongoDB import db
+from database.connection import db
 from bson import ObjectId
-import pytz
 
 from utils import utcToArgentina
 

@@ -1,5 +1,4 @@
-from mongoDB import db
-
+from database.connection import db
 
 def getTeachers():
     collection = db['usuarios']

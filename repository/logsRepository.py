@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
-from mongoDB import db
-from bson import ObjectId
+from database.connection import db
 
 
 def registrarLog(horario,nombre,apellido,dni,estado,tipo):
