@@ -158,7 +158,7 @@ def update_user_repository(user_id, nombre, apellido, dni, rol, horarios, email)
 
         campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
         normalizarDatosEnLogs(json_usuario_original,campos_modificados)
-        notificarCambioDeTitularidad(json_usuario_original,json_usuario_modificado)
+        notificarCambioDeTitularidad(nombre,apellido,json_usuario_original,json_usuario_modificado)
     
     return { 'modifiedCount': result.modified_count }
 
@@ -210,15 +210,15 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)
 
-def notificarCambioDeTitularidad(json_usuario_original,json_usuario_modificado):
+def notificarCambioDeTitularidad(nombre,apellido,json_usuario_original,json_usuario_modificado):
     asunto="Notificación sobre cambio de titularidad"
     personal_jerarquico = get_users_by_role("personal jerárquico")
     emails = [user['email'] for user in personal_jerarquico]
-    mensaje=generar_cuerpo_cambio_titularidad(json_usuario_original,json_usuario_modificado)
+    mensaje=generar_cuerpo_cambio_titularidad(nombre, apellido, json_usuario_original,json_usuario_modificado)
     for email in emails:
         send_email(email, asunto, mensaje)
 
-def generar_cuerpo_cambio_titularidad(original, modificado):
+def generar_cuerpo_cambio_titularidad(nombre, apellido, original, modificado):
     cambios = []
     for key in original:
         if key in modificado and original[key] != modificado[key]:
@@ -227,9 +227,32 @@ def generar_cuerpo_cambio_titularidad(original, modificado):
     if not cambios:
         return "No se han realizado modificaciones."
     
-    cuerpo = "Se han realizado los siguientes cambios en la información del usuario:\n\n"
+    cuerpo = f"Se han realizado los siguientes cambios en la información del usuario:\n\n{nombre} {apellido}\n"
     cuerpo += "\n".join(cambios)
     return cuerpo
+
+
+def notificarIncompatibilidadEnRegistro(nombre,apellido,dni):
+    asunto="Usuario ingresado mediante registro offline inexistente en la base de datos."
+    collection = db['usuarios']
+    personal_jerarquico = collection.find({"rol": "personal jerárquico"})
+    emails = [user['email'] for user in personal_jerarquico]
+
+    mensaje=generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni)
+
+    for email in emails:
+        send_email(email, asunto, mensaje)
+
+def generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni):       
+    cuerpo = (
+        f"Se ha detectado una incompatibilidad con un registro offline:\n\n"
+        f"El visitante ingresado no esta registrado en la base de datos\n"
+        f"Usuario: {nombre} {apellido}\n"
+        f"DNI: {dni}\n\n"       
+        f"Log3rApp by AlphaTeam"
+    )
+    return cuerpo
+
 
 def notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte):
     asunto="Notificación sobre corte de Internet (Log3rApp)"

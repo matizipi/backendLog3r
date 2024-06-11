@@ -1,6 +1,7 @@
+import time
 from datetime import datetime, timedelta
 from database.connection import db
-import utils
+from repository.usersRepository import notificarIncompatibilidadEnRegistro
 
 def registrarLog(horario,nombre,apellido,dni,estado,tipo):
     
@@ -68,3 +69,18 @@ def obtener_logs_dia_especifico(fecha):
         resultados_json.append(resultado)
 
     return resultados_json  # Devolver como una lista de diccionarios
+
+
+def chequearExistenciaDeUsuario(nombre, apellido, dni):
+    collection = db['usuarios']
+    usuario = collection.find_one({
+        'dni': dni,
+        'nombre': nombre,
+        'apellido': apellido
+    })
+    if usuario:
+        print(f"El usuario {nombre} {apellido} con DNI {dni} ya existe en la base de datos.")
+    else:
+        print(f"El usuario {nombre} {apellido} con DNI {dni} no existe en la base de datos.")
+        time.sleep(10)
+        notificarIncompatibilidadEnRegistro(nombre, apellido, dni)
