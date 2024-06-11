@@ -86,8 +86,8 @@ def authentication():
                 }
                 evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
                 print('Ingreso irregular por licencia. Evento creado')
-                break
-        
+                return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
+
         user_finded['horarios'].sort(key=(lambda horarios: horarios['tipo'])) # ordenar por lunes a viernes, y luego sabado
         
         ingreso_horario_invalido = True
@@ -183,7 +183,7 @@ def login2():
                 }
                 evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
                 print('Ingreso irregular por licencia. Evento creado')
-                break
+                return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
         
         user_finded['horarios'].sort(key=(lambda horarios: horarios['tipo'])) # ordenar por lunes a viernes, y luego sabado
         
