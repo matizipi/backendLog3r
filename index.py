@@ -15,7 +15,6 @@ from waitress import serve
 from database.connection import client
 from repository.eventosRepository import post_eventos_repository
 from repository.licenciasRepository import getUserLicenses
-from repository.usersRepository import notificarCorte
 
 import comparacionCaras
 from api.imagenesApi import imagenes_bp
@@ -27,6 +26,7 @@ from api.configApi import config_bp
 from api.usersApi import users_bp
 from api.horariosApi import horarios_bp
 from api.eventosApi import eventos_bp
+from api.reportesApi import reportes_bp
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -57,6 +57,7 @@ app.register_blueprint(config_bp, url_prefix = '/api/config')
 app.register_blueprint(users_bp, url_prefix = '/api/users')
 app.register_blueprint(horarios_bp, url_prefix = '/api/horarios')
 app.register_blueprint(eventos_bp, url_prefix = '/api/eventos')
+app.register_blueprint(reportes_bp, url_prefix= '/api/reportes')
 
 @app.route('/api/authentication', methods=['POST'])
 def authentication():
@@ -232,31 +233,6 @@ def login2():
         return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
 
     return jsonify({'message': 'Rol incorrecto'}), 401
-
-
-@app.route('/api/authentication/cortes', methods=['POST'])
-def notificar_cortes_conexion():
-    data = request.form    
-    horario_desconexion_str = data.get('horarioDesconexion')  
-    horario_reconexion_str = data.get('horarioReconexion')  
-    cantRegSincronizados = data.get('cantRegSincronizados')
-    periodoDeCorte_str=data.get('periodoDeCorte')
-    try:
-      
-        horarioDesconexion = datetime.strptime(horario_desconexion_str, '%Y-%m-%d %H:%M:%S')
-        horarioReconexion = datetime.strptime(horario_reconexion_str, '%Y-%m-%d %H:%M:%S')
-
-         # Convertir periodoDeCorte_str a timedelta
-        periodoDeCorte_time = datetime.strptime(periodoDeCorte_str, '%H:%M:%S')
-        periodoDeCorte = timedelta(hours=periodoDeCorte_time.hour, minutes=periodoDeCorte_time.minute, seconds=periodoDeCorte_time.second)
-
-        result = notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
-
-        return jsonify(result), 200
-    
-    except Exception as e:
-        mensaje_error = 'Error interno en el servidor: {}'.format(str(e))
-        return jsonify({'error': mensaje_error}), 500 
 
     
 def launch_script_automatic_log():

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from repository.logsRepository import obtener_logs_dia_especifico, registrarLog, chequearExistenciaDeUsuario
-from repository.usersRepository import get_last_estado_by_dni
+from repository.logsRepository import obtener_logs_dia_especifico, registrarLog
+from repository.usersRepository import get_last_estado_by_dni, chequearExistenciaDeUsuario
 from datetime import datetime
 
 # Crear instancia Blueprint con el nombre 'logs'

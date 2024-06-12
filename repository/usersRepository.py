@@ -1,10 +1,8 @@
-import os
+import time
 from bson import ObjectId
 from datetime import datetime
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from database.connection import db
+from repository.reportesRepository import notificarIncompatibilidadEnRegistro,notificarCambioDeTitularidad
 
 def get_users_repository():
     collection = db['usuarios']
@@ -210,100 +208,7 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)
 
-def notificarCambioDeTitularidad(nombre,apellido,json_usuario_original,json_usuario_modificado):
-    asunto="Notificación sobre cambio de titularidad"
-    personal_jerarquico = get_users_by_role("personal jerárquico")
-    emails = [user['email'] for user in personal_jerarquico]
-    mensaje=generar_cuerpo_cambio_titularidad(nombre, apellido, json_usuario_original,json_usuario_modificado)
-    for email in emails:
-        send_email(email, asunto, mensaje)
-
-def generar_cuerpo_cambio_titularidad(nombre, apellido, original, modificado):
-    cambios = []
-    for key in original:
-        if key in modificado and original[key] != modificado[key]:
-            cambios.append(f"{key}: {original[key]} -> {modificado[key]}")
-    
-    if not cambios:
-        return "No se han realizado modificaciones."
-    
-    cuerpo = f"Se han realizado los siguientes cambios en la información del usuario:\n\n{nombre} {apellido}\n"
-    cuerpo += "\n".join(cambios)
-    return cuerpo
-
-
-def notificarIncompatibilidadEnRegistro(nombre,apellido,dni):
-    asunto="Usuario ingresado mediante registro offline inexistente en la base de datos."
-    collection = db['usuarios']
-    personal_jerarquico = collection.find({"rol": "personal jerárquico"})
-    emails = [user['email'] for user in personal_jerarquico]
-
-    mensaje=generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni)
-
-    for email in emails:
-        send_email(email, asunto, mensaje)
-
-def generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni):       
-    cuerpo = (
-        f"Se ha detectado una incompatibilidad con un registro offline:\n\n"
-        f"El visitante ingresado no esta registrado en la base de datos\n"
-        f"Usuario: {nombre} {apellido}\n"
-        f"DNI: {dni}\n\n"       
-        f"Log3rApp by AlphaTeam"
-    )
-    return cuerpo
-
-
-def notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte):
-    asunto="Notificación sobre corte de Internet (Log3rApp)"
-    personal_jerarquico = get_users_by_role("personal jerárquico")
-
-    emails = [user['email'] for user in personal_jerarquico]
-
-    mensaje=generar_cuerpo_notificacion_corte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
-
-    for email in emails:
-        send_email(email, asunto, mensaje)
-
-def generar_cuerpo_notificacion_corte(horarioDesconexion, horarioReconexion, cantRegSincronizados,periodoDeCorte):       
-    cuerpo = (
-        f"Se ha detectado un corte de Internet en la aplicación:\n\n"
-        f"Horario de Desconexión: {horarioDesconexion}\n"
-        f"Horario de Reconexión: {horarioReconexion}\n"
-        f"Cantidad de Registros Sincronizados: {cantRegSincronizados}\n\n"
-        f"Tiempo total sin conexión de internet: {periodoDeCorte} (horas\\minutos\\segundos) \n\n"
-        f"Log3rApp by AlphaTeam"
-    )
-    return cuerpo
-
-
-def send_email(to_email, subject, message):
-
-    smtp_server = 'smtp.office365.com'
-    smtp_port = 587
-    smtp_user = os.getenv('OUTLOOK_USER') 
-    smtp_password = os.getenv('OUTLOOK_PASSWORD') 
-    
-    # Configuración del mensaje
-    msg = MIMEMultipart()
-    msg['From'] = smtp_user
-    msg['To'] = to_email
-    msg['Subject'] = subject
-
-    # Adjuntar el cuerpo del mensaje
-    msg.attach(MIMEText(message, 'plain'))
-
-    # Conectar al servidor SMTP y enviar el correo
-    try:
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.sendmail(smtp_user, to_email, msg.as_string())
-        server.quit()
-        print(f'Correo enviado a {to_email}')
-    except Exception as e:
-        print(f'Error al enviar el correo a {to_email}: {e}')
-    
+   
 def get_last_estado_by_dni(dni):
     logs = db['logs']
     try:
@@ -322,3 +227,17 @@ def get_last_estado_by_dni(dni):
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return {'error': mensaje_error}, 500
+
+def chequearExistenciaDeUsuario(nombre, apellido, dni):
+    collection = db['usuarios']
+    usuario = collection.find_one({
+        'dni': dni,
+        'nombre': nombre,
+        'apellido': apellido
+    })
+    if usuario:
+        print(f"El usuario {nombre} {apellido} con DNI {dni} ya existe en la base de datos.")
+    else:
+        print(f"El usuario {nombre} {apellido} con DNI {dni} no existe en la base de datos.")
+        time.sleep(10)
+        notificarIncompatibilidadEnRegistro(nombre, apellido, dni)    
