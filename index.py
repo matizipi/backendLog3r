@@ -86,7 +86,7 @@ def authentication():
                 }
                 evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
                 print('Ingreso irregular por licencia. Evento creado')
-                return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
+                return jsonify({'message': 'Autenticación exitosa', 'data': user_finded}),200
 
         user_finded['horarios'].sort(key=(lambda horarios: horarios['tipo'])) # ordenar por lunes a viernes, y luego sabado
         
