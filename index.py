@@ -132,7 +132,7 @@ def authentication():
             evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
             print('Ingreso irregular por horario. Evento creado')
             
-        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
+        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded}),200
     except RuntimeError as e:
         return jsonify({'message': e.args[0]}), 400
     except Exception as e:
@@ -229,7 +229,7 @@ def login2():
             evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
             print('Ingreso irregular por horario. Evento creado')
 
-        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
+        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded}),200
 
     return jsonify({'message': 'Rol incorrecto'}), 401
 
