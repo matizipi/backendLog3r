@@ -1,5 +1,6 @@
 from datetime import datetime
 import pytz
+from dataclasses import dataclass
 # horario = datetime.strptime(horario_str, '%Y-%m-%d %H:%M:%S')
 # horario = datetime.strftime(horario, '%Y-%m-%d %H:%M:%S')
 def utcToArgentina(dt: datetime):
@@ -14,3 +15,12 @@ def getHoraMinutoFromHorario(horario: str): # "hh:mm"
   minuto = int(horario_splitted[1])
 
   return hora, minuto
+
+@dataclass
+class Registro:
+    horario: str
+    nombre: str
+    apellido: str
+    dni: str
+    estado: str
+    tipo: str

@@ -3,6 +3,7 @@ from bson import ObjectId
 from datetime import datetime
 from database.connection import db
 from repository.reportesRepository import notificarIncompatibilidadEnRegistro,notificarCambioDeTitularidad
+from utils import Registro
 
 def get_users_repository():
     collection = db['usuarios']
@@ -227,8 +228,32 @@ def get_last_estado_by_dni(dni):
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return {'error': mensaje_error}, 500
+    
+##def chequearExistenciaDeUsuario(nombre, apellido, dni):
+    collection = db['usuarios']
+    usuario = collection.find_one({
+        'dni': dni,
+        'nombre': nombre,
+        'apellido': apellido
+    })
+    return usuario is not None 
 
-def chequearExistenciaDeUsuario(nombre, apellido, dni):
+def chequearExistenciaDeUsuarios(registros):
+    incompatibles = []
+    collection = db['usuarios']
+   
+    for registro in registros:
+        usuario = collection.find_one({
+            'dni': registro.dni,
+            'nombre': registro.nombre,
+            'apellido': registro.apellido
+        })
+        if usuario is None:
+            incompatibles.append(registro)
+
+    return incompatibles    
+
+##def chequearExistenciaDeUsuario(nombre, apellido, dni):
     collection = db['usuarios']
     usuario = collection.find_one({
         'dni': dni,
