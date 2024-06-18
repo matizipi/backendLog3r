@@ -134,7 +134,16 @@ def create_user_repository(nombre, apellido, dni, rol, horarios, email):
 
 def update_user_repository(user_id, nombre, apellido, dni, rol, horarios, email):
     collection = db['usuarios']
-    json_usuario_original = get_user_repository(user_id, with_horarios=True) #obtengo usuario antes de modificarse
+    json_usuario_original = get_user_repository(user_id, with_horarios=True)  # obtener usuario antes de modificarse
+
+    # Verificar si el nuevo DNI o correo electrónico ya existen en otros usuarios
+    usuario_existente_dni = collection.find_one({'dni': dni, '_id': {'$ne': ObjectId(user_id)}})
+    usuario_existente_email = collection.find_one({'email': email, '_id': {'$ne': ObjectId(user_id)}})
+
+    if usuario_existente_dni:
+        raise RuntimeError("El DNI ya está registrado en otro usuario")
+    if usuario_existente_email:
+        raise RuntimeError("El email ya está registrado en otro usuario")
 
     for i in range(len(horarios)):
         horarios[i] = ObjectId(horarios[i])
@@ -147,20 +156,23 @@ def update_user_repository(user_id, nombre, apellido, dni, rol, horarios, email)
             'dni': int(dni),
             'rol': rol,
             'horarios': horarios,
-            'email':email
+            'email': email
         }}
     )
+
     if result.modified_count > 0:
         json_usuario_original['horarios'] = [horario['tipo'] + " " + horario['horarioEntrada'] + "-" + horario['horarioSalida'] for horario in json_usuario_original['horarios']]
 
         json_usuario_modificado = get_user_repository(user_id, with_horarios=True)
         json_usuario_modificado['horarios'] = [horario['tipo'] + " " + horario['horarioEntrada'] + "-" + horario['horarioSalida'] for horario in json_usuario_modificado['horarios']]
 
-        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
-        normalizarDatosEnLogs(json_usuario_original,campos_modificados)
-        notificarCambioDeTitularidad(nombre,apellido,json_usuario_original,json_usuario_modificado)
-    
-    return { 'modifiedCount': result.modified_count }
+        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original, json_usuario_modificado)
+        normalizarDatosEnLogs(json_usuario_original, campos_modificados)
+        notificarCambioDeTitularidad(nombre, apellido, json_usuario_original, json_usuario_modificado)
+
+    return {'modifiedCount': result.modified_count}
+
+
 
 def delete_user_repository(user_id):
     collection = db['usuarios']

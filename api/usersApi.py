@@ -63,14 +63,16 @@ def update_user(user_id):
         # Validar campos requeridos
         if not all([nombre, apellido, dni, rol, horarios]):
             return jsonify({"error": "Faltan datos obligatorios"}), 400
-        
-        # horarios_splitted = horarios.split('-')
 
         result = update_user_repository(user_id, nombre, apellido, dni, rol, horarios, email)
         return jsonify({'mensaje': 'Usuario actualizado' if result['modifiedCount'] > 0 else 'No se realizaron cambios'}), 200
+    except RuntimeError as e:
+        return jsonify({'error': e.args[0]}), 400
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return jsonify({'error': mensaje_error}), 500
+
+
 
 @users_bp.route('/<user_id>', methods=['DELETE'])
 def delete_user(user_id):
