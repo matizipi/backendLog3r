@@ -177,6 +177,9 @@ def update_user_repository(user_id, nombre, apellido, dni, rol, horarios, email)
 def delete_user_repository(user_id):
     collection = db['usuarios']
     result = collection.delete_one({'_id': ObjectId(user_id)})
+    collectionLicencias = db['licencias']
+    filtro = {'userId': user_id}     
+    collectionLicencias.delete_many(filtro)
     return { 'deletedCount': result.deleted_count }
 
 
