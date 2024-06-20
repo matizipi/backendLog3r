@@ -1,9 +1,7 @@
 from flask import Blueprint, request, jsonify
 from repository.logsRepository import obtener_logs_dia_especifico, registrarLog
-from repository.usersRepository import get_last_estado_by_dni, chequearExistenciaDeUsuario
+from repository.usersRepository import get_last_estado_by_dni
 from datetime import datetime
-from utils import Registro
-from reportesApi import infoHorarioDesconexion,infoHorarioReconexion,infoCantRegSincronizados,infoPeriodoDeCorte
 
 # Crear instancia Blueprint con el nombre 'logs'
 logs_bp = Blueprint('logs', __name__)
@@ -71,31 +69,3 @@ def get_last_estado():
 
     response, status_code = get_last_estado_by_dni(dni)  # Obtener la respuesta y el código de estado
     return jsonify(response), status_code  # Devolver la respuesta y el código de estado
-
-
-@logs_bp.route('/authenticationOffline', methods=['POST'])
-def log_authentication_Offline():    
-    try:
-        # Obtener el JSON de la solicitud
-        data = request.get_json()
-        
-        # Crear una lista de instancias de la clase Registro
-        registros = [Registro(**registro) for registro in data]
-
-        # Procesar cada registro
-        resultados = []
-        for registro in registros:
-            # Convertir el horario de string a datetime
-            horario = datetime.strptime(registro.horario, '%Y-%m-%d %H:%M:%S')
-            
-            # Llamar a la función que procesa el registro
-            resultado = registrarLog(horario, registro.nombre, registro.apellido, registro.dni, registro.estado, registro.tipo)
-            
-            resultados.append(resultado)
-        chequearExistenciaDeUsuarios(registros)              
-       
-        
-        return jsonify(resultados), 200
-    except Exception as e:
-        mensaje_error = f"Error interno en el servidor: {str(e)}"
-        return jsonify({'error': mensaje_error}), 500

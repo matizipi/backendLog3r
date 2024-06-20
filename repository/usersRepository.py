@@ -2,8 +2,7 @@ import time
 from bson import ObjectId
 from datetime import datetime
 from database.connection import db
-from repository.reportesRepository import notificarIncompatibilidadEnRegistro,notificarCambioDeTitularidad
-from utils import Registro
+from repository.reportesRepository import notificarCambioDeTitularidad
 
 def get_users_repository():
     collection = db['usuarios']
@@ -200,6 +199,7 @@ def guardarHistorialUsuarios(nombre, apellido, dni, rol, horarios):
             'fechaDeCambio':datetime.now(),
             'usuarioResponsable':'RRHH'
         })
+    
 def normalizarDatosEnLogs(json_usuario_original,cambios): 
     dni = json_usuario_original.get('dni')
     logs = db['logs']   
@@ -228,41 +228,31 @@ def get_last_estado_by_dni(dni):
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return {'error': mensaje_error}, 500
-    
-##def chequearExistenciaDeUsuario(nombre, apellido, dni):
-    collection = db['usuarios']
-    usuario = collection.find_one({
-        'dni': dni,
-        'nombre': nombre,
-        'apellido': apellido
-    })
-    return usuario is not None 
 
 def chequearExistenciaDeUsuarios(registros):
-    incompatibles = []
+    listaIncompatibles = []
     collection = db['usuarios']
-   
+
     for registro in registros:
-        usuario = collection.find_one({
-            'dni': registro.dni,
-            'nombre': registro.nombre,
-            'apellido': registro.apellido
-        })
-        if usuario is None:
-            incompatibles.append(registro)
+        try:
+            # Acceder a los valores del diccionario
+            dni = registro.get('dni')
+            nombre = registro.get('nombre')
+            apellido = registro.get('apellido')
+            
+            usuario = collection.find_one({
+                'dni': dni,
+                'nombre': nombre,
+                'apellido': apellido
+            })
+            
+            if usuario is None:
+                listaIncompatibles.append(registro)
+        except Exception as e:
+            print(f"Error al verificar el registro {registro}: {str(e)}")
 
-    return incompatibles    
+    return listaIncompatibles  
 
-##def chequearExistenciaDeUsuario(nombre, apellido, dni):
-    collection = db['usuarios']
-    usuario = collection.find_one({
-        'dni': dni,
-        'nombre': nombre,
-        'apellido': apellido
-    })
-    if usuario:
-        print(f"El usuario {nombre} {apellido} con DNI {dni} ya existe en la base de datos.")
-    else:
-        print(f"El usuario {nombre} {apellido} con DNI {dni} no existe en la base de datos.")
-        time.sleep(10)
-        notificarIncompatibilidadEnRegistro(nombre, apellido, dni)    
+        
+
+   

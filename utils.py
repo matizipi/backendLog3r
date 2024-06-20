@@ -16,11 +16,4 @@ def getHoraMinutoFromHorario(horario: str): # "hh:mm"
 
   return hora, minuto
 
-@dataclass
-class Registro:
-    horario: str
-    nombre: str
-    apellido: str
-    dni: str
-    estado: str
-    tipo: str
+    

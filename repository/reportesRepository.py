@@ -4,27 +4,50 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from database.connection import db
 
-def notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte):
+
+def notificarInfoDeSincronizacion(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte,incompatibles):
     asunto="Notificación sobre corte de Internet (Log3rApp)"
     personal_jerarquico =  obtener_usuarios_por_rol("personal jerárquico")
 
     emails = [user['email'] for user in personal_jerarquico]
 
-    mensaje=generar_cuerpo_notificacion_corte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
+    mensaje=generar_cuerpo_notificacion(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte,incompatibles)
 
     for email in emails:
         send_email(email, asunto, mensaje)
 
-def generar_cuerpo_notificacion_corte(horarioDesconexion, horarioReconexion, cantRegSincronizados,periodoDeCorte):       
-    cuerpo = (
+def generar_cuerpo_notificacion(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte,incompatibles):
+    cuerpoCorte = (
         f"Se ha detectado un corte de Internet en la aplicación:\n\n"
         f"Horario de Desconexión: {horarioDesconexion}\n"
         f"Horario de Reconexión: {horarioReconexion}\n"
         f"Cantidad de Registros Sincronizados: {cantRegSincronizados}\n\n"
-        f"Tiempo total sin conexión de internet: {periodoDeCorte} (horas\\minutos\\segundos) \n\n"
-        f"Log3rApp by AlphaTeam"
+        f"Tiempo total sin conexión de internet: {periodoDeCorte} (horas\\minutos\\segundos) \n\n"        
     )
+    print(f'cantidad de incompatibles:{len(incompatibles)}')
+
+    if len(incompatibles) > 0:
+        cuerpoNotificacion = cuerpoCorte + generar_cuerpo_notificacion_incompatibilidad(incompatibles)
+    else:
+        cuerpoNotificacion = cuerpoCorte + "Log3rApp by AlphaTeam"
+  
+    return cuerpoNotificacion
+
+def generar_cuerpo_notificacion_incompatibilidad(registros):
+    cuerpo = "Se ha detectado una incompatibilidad con los siguientes registros offline: (No son Usuarios registrados)\n\n"
+    
+    for registro in registros:
+        dni = registro.get('dni')
+        nombre = registro.get('nombre')
+        apellido = registro.get('apellido')
+        cuerpo += (
+            f"Usuario: {nombre} {apellido}\n"
+            f"DNI: {dni}\n\n"
+        )
+    
+    cuerpo += "Log3rApp by AlphaTeam"
     return cuerpo
+   
 
 def notificarCambioDeTitularidad(nombre,apellido,json_usuario_original,json_usuario_modificado):
     asunto="Notificación sobre cambio de titularidad"
@@ -45,27 +68,6 @@ def generar_cuerpo_cambio_titularidad(nombre, apellido, original, modificado):
     
     cuerpo = f"Se han realizado los siguientes cambios en la información del usuario:\n\n{nombre} {apellido}\n"
     cuerpo += "\n".join(cambios)
-    return cuerpo
-
-
-def notificarIncompatibilidadEnRegistro(nombre,apellido,dni):
-    asunto="Usuario ingresado mediante registro offline inexistente en la base de datos."    
-    personal_jerarquico =  obtener_usuarios_por_rol("personal jerárquico")
-    emails = [user['email'] for user in personal_jerarquico]
-
-    mensaje=generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni)
-
-    for email in emails:
-        send_email(email, asunto, mensaje)
-
-def generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni):       
-    cuerpo = (
-        f"Se ha detectado una incompatibilidad con un registro offline:\n\n"
-        f"El visitante ingresado no esta registrado en la base de datos\n"
-        f"Usuario: {nombre} {apellido}\n"
-        f"DNI: {dni}\n\n"       
-        f"Log3rApp by AlphaTeam"
-    )
     return cuerpo
 
 
@@ -111,4 +113,4 @@ def obtener_usuarios_por_rol(role_name):
             pass # borrar try-except cuando todos los usuarios de la db tengan el campo "horarios"
         users.append(user)
 
-    return users         
+    return users 

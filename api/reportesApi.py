@@ -1,37 +1,48 @@
 from flask import Blueprint, request, jsonify
+from repository.reportesRepository import notificarInfoDeSincronizacion
+from repository.logsRepository import registrarLog
+from repository.usersRepository import chequearExistenciaDeUsuarios
 from datetime import datetime, timedelta
-from repository.reportesRepository import notificarCorte
-import os
-from bson import ObjectId
-from datetime import datetime
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from database.connection import db
 
 reportes_bp = Blueprint('reportes', __name__)
+   
+@reportes_bp.route('/infoSync', methods=['POST'])
+def notificar_info_sincronizacion():
+    data=request.json
 
-@reportes_bp.route('/cortes', methods=['POST'])
-def notificar_cortes_conexion():
-    data = request.form    
-    horario_desconexion_str = data.get('horarioDesconexion')  
-    horario_reconexion_str = data.get('horarioReconexion')  
-    cantRegSincronizados = data.get('cantRegSincronizados')
-    periodoDeCorte_str=data.get('periodoDeCorte')
     try:
+        horario_desconexion_str = data.get('horarioDesconexion')  
+        horario_reconexion_str = data.get('horarioReconexion')  
+        cantRegSincronizados = data.get('cantRegSincronizados')
+        periodoDeCorte_str=data.get('periodoDeCorte')
+    
       
         horarioDesconexion = datetime.strptime(horario_desconexion_str, '%Y-%m-%d %H:%M:%S')
         horarioReconexion = datetime.strptime(horario_reconexion_str, '%Y-%m-%d %H:%M:%S')
 
-         # Convertir periodoDeCorte_str a timedelta
         periodoDeCorte_time = datetime.strptime(periodoDeCorte_str, '%H:%M:%S')
         periodoDeCorte = timedelta(hours=periodoDeCorte_time.hour, minutes=periodoDeCorte_time.minute, seconds=periodoDeCorte_time.second)
 
-        result = notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
+        registros = data.get('registros', [])
 
-        return jsonify(result), 200
-    
+        resultados = []
+        for registro in registros:
+            # Convertir el horario de string a datetime
+            horario = datetime.strptime(registro['horario'], '%Y-%m-%d %H:%M:%S')
+            
+            # Llamar a la función que procesa el registro
+            resultado = registrarLog(horario, registro['nombre'], registro['apellido'], registro['dni'], registro['estado'], registro['tipo'])
+            resultados.append(resultado)
+
+        incompatibles=chequearExistenciaDeUsuarios(registros)
+        notificarInfoDeSincronizacion(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte,incompatibles)
+
+        return jsonify(resultados), 200
     except Exception as e:
-        mensaje_error = 'Error interno en el servidor: {}'.format(str(e))
+        mensaje_error = f"Error interno en el servidor: {str(e)}"
         return jsonify({'error': mensaje_error}), 500
+
+    
+
+
 
