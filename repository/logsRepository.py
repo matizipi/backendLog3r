@@ -63,7 +63,6 @@ def obtener_logs_dia_especifico(fecha):
         resultado['_id'] = str(resultado['_id'])  # Convertir ObjectId a string
         if 'horarios' in resultado:
             del resultado['horarios']  # Eliminar 'horarios' del resultado final
-        resultado['horario'] = resultado['horario'] - timedelta(hours=3)
         resultados_json.append(resultado)
 
     return resultados_json  # Devolver como una lista de diccionarios
