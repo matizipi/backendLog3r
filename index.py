@@ -15,7 +15,6 @@ from waitress import serve
 from database.connection import client
 from repository.eventosRepository import post_eventos_repository
 from repository.licenciasRepository import getUserLicenses
-from repository.usersRepository import notificarCorte
 
 import comparacionCaras
 from api.imagenesApi import imagenes_bp
@@ -27,6 +26,7 @@ from api.configApi import config_bp
 from api.usersApi import users_bp
 from api.horariosApi import horarios_bp
 from api.eventosApi import eventos_bp
+from api.reportesApi import reportes_bp
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -57,6 +57,7 @@ app.register_blueprint(config_bp, url_prefix = '/api/config')
 app.register_blueprint(users_bp, url_prefix = '/api/users')
 app.register_blueprint(horarios_bp, url_prefix = '/api/horarios')
 app.register_blueprint(eventos_bp, url_prefix = '/api/eventos')
+app.register_blueprint(reportes_bp, url_prefix= '/api/reportes')
 
 @app.route('/api/authentication', methods=['POST'])
 def authentication():
@@ -86,7 +87,7 @@ def authentication():
                 }
                 evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
                 print('Ingreso irregular por licencia. Evento creado')
-                return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
+                return jsonify({'message': 'Autenticación exitosa', 'data': user_finded}),200
 
         user_finded['horarios'].sort(key=(lambda horarios: horarios['tipo'])) # ordenar por lunes a viernes, y luego sabado
         
@@ -132,7 +133,7 @@ def authentication():
             evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
             print('Ingreso irregular por horario. Evento creado')
             
-        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
+        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded}),200
     except RuntimeError as e:
         return jsonify({'message': e.args[0]}), 400
     except Exception as e:
@@ -157,106 +158,85 @@ def horarioValido(dt_actual: datetime, horario_entrada: str, horario_salida: str
 
 @app.route('/api/login', methods=['POST'])
 def login2():
-    data = request.json  # JSON payload containing the array of floats
-    embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
-
-    user_finded = comparacionCaras.compararEmbeddingConDB(embeddings)
-    if user_finded is None or user_finded == -1:
-        return jsonify({'message': 'Autenticación fallida:Usuario No Registro'}), 401
-
-    if 'seguridad' in user_finded['rol'] or 'recursos humanos' in user_finded['rol'] or 'administrador' in user_finded['rol']:
-        # validaciones de licencia y horarios
-        user_licenses = getUserLicenses(user_finded['_id'])
-
-        dt = datetime.now()
-        fecha_actual = dt.date()
-        # Validar si la fecha actual está en algún rango de horario
-        
-        for license in user_licenses:
-            fecha_desde = datetime.strptime(license['fechaDesde'], '%Y-%m-%d').date()
-            fecha_hasta = datetime.strptime(license['fechaHasta'], '%Y-%m-%d').date()
-
-            if fecha_desde <= fecha_actual <= fecha_hasta:
-                active_license = {
-                    'fechaDesde': license['fechaDesde'],
-                    'fechaHasta': license['fechaHasta'],
-                }
-                evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
-                print('Ingreso irregular por licencia. Evento creado')
-                return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
-        
-        user_finded['horarios'].sort(key=(lambda horarios: horarios['tipo'])) # ordenar por lunes a viernes, y luego sabado
-        
-        ingreso_horario_invalido = True
-
-        weekday = fecha_actual.weekday() # 0 = lunes, ..., 6 = domingo
-        if weekday == 6:
-            print('Ingreso irregular por día domingo')
-            ingreso_horario_invalido = True
-        else:
-            i = 0
-            if weekday < 5: # lunes a viernes
-                if (len(user_finded['horarios']) > 0):
-                    while user_finded['horarios'][i]['tipo'] == 'lunes a viernes':
-                        horario_entrada = user_finded['horarios'][i]['horarioEntrada']
-                        horario_salida = user_finded['horarios'][i]['horarioSalida']
-
-                        if horarioValido(dt, horario_entrada, horario_salida):
-                            ingreso_horario_invalido = False
-                            break
-
-                        i+=1
-            else: # sabado
-                while i <= len(user_finded['horarios']) - 1:
-                    if user_finded['horarios'][i]['tipo'] == 'sabado':
-                        horario_entrada = user_finded['horarios'][i]['horarioEntrada']
-                        horario_salida = user_finded['horarios'][i]['horarioSalida']
-
-                        if horarioValido(dt, horario_entrada, horario_salida):
-                            ingreso_horario_invalido = False
-                            break
-                    i+=1
-        
-        if ingreso_horario_invalido:
-            horarios_db = []
-            for i in range(len(user_finded['horarios'])):
-                horarios_db.append({
-                    'horarioEntrada': user_finded['horarios'][i]['horarioEntrada'],
-                    'horarioSalida': user_finded['horarios'][i]['horarioSalida'],
-                    'tipo': user_finded['horarios'][i]['tipo'],
-                    }
-                )
-            evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
-            print('Ingreso irregular por horario. Evento creado')
-
-        return jsonify({'message': 'Autenticación exitosa', 'data': user_finded})
-
-    return jsonify({'message': 'Rol incorrecto'}), 401
-
-
-@app.route('/api/authentication/cortes', methods=['POST'])
-def notificar_cortes_conexion():
-    data = request.form    
-    horario_desconexion_str = data.get('horarioDesconexion')  
-    horario_reconexion_str = data.get('horarioReconexion')  
-    cantRegSincronizados = data.get('cantRegSincronizados')
-    periodoDeCorte_str=data.get('periodoDeCorte')
     try:
-      
-        horarioDesconexion = datetime.strptime(horario_desconexion_str, '%Y-%m-%d %H:%M:%S')
-        horarioReconexion = datetime.strptime(horario_reconexion_str, '%Y-%m-%d %H:%M:%S')
+        data = request.json  # JSON payload containing the array of floats
+        embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
 
-         # Convertir periodoDeCorte_str a timedelta
-        periodoDeCorte_time = datetime.strptime(periodoDeCorte_str, '%H:%M:%S')
-        periodoDeCorte = timedelta(hours=periodoDeCorte_time.hour, minutes=periodoDeCorte_time.minute, seconds=periodoDeCorte_time.second)
+        user_finded = comparacionCaras.compararEmbeddingConDB(embeddings)
+        if user_finded is None or user_finded == -1:
+            return jsonify({'message': 'Autenticación fallida: Usuario No Registrado'}), 401
 
-        result = notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
+        if 'seguridad' in user_finded['rol'] or 'recursos humanos' in user_finded['rol'] or 'administrador' in user_finded['rol']:
+            user_licenses = getUserLicenses(user_finded['_id'])
+            dt = datetime.now()
+            fecha_actual = dt.date()
 
-        return jsonify(result), 200
-    
+            # Validar si el usuario tiene licencias activas
+            has_active_license = False
+            for license in user_licenses:
+                fecha_desde = datetime.strptime(license['fechaDesde'], '%Y-%m-%d').date()
+                fecha_hasta = datetime.strptime(license['fechaHasta'], '%Y-%m-%d').date()
+
+                if fecha_desde <= fecha_actual <= fecha_hasta:
+                    has_active_license = True
+                    active_license = {
+                        'fechaDesde': license['fechaDesde'],
+                        'fechaHasta': license['fechaHasta'],
+                    }
+                    evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
+                    print('Ingreso regular por licencia. Evento creado')
+                    break
+
+            # Validar si el usuario está dentro de un horario adecuado
+            if not has_active_license:
+                user_finded['horarios'].sort(key=(lambda horarios: horarios['tipo']))  # ordenar por lunes a viernes, y luego sabado
+
+                ingreso_horario_valido = False
+                weekday = fecha_actual.weekday()  # 0 = lunes, ..., 6 = domingo
+                if weekday == 6:
+                    print('Ingreso irregular por día domingo')
+                else:
+                    i = 0
+                    if weekday < 5:  # lunes a viernes
+                        while i < len(user_finded['horarios']) and user_finded['horarios'][i]['tipo'] == 'lunes a viernes':
+                            horario_entrada = user_finded['horarios'][i]['horarioEntrada']
+                            horario_salida = user_finded['horarios'][i]['horarioSalida']
+
+                            if horarioValido(dt, horario_entrada, horario_salida):
+                                ingreso_horario_valido = True
+                                break
+                            i += 1
+                    else:  # sábado
+                        while i < len(user_finded['horarios']):
+                            if user_finded['horarios'][i]['tipo'] == 'sabado':
+                                horario_entrada = user_finded['horarios'][i]['horarioEntrada']
+                                horario_salida = user_finded['horarios'][i]['horarioSalida']
+
+                                if horarioValido(dt, horario_entrada, horario_salida):
+                                    ingreso_horario_valido = True
+                                    break
+                            i += 1
+
+                if not ingreso_horario_valido:
+                    horarios_db = []
+                    for i in range(len(user_finded['horarios'])):
+                        horarios_db.append({
+                            'horarioEntrada': user_finded['horarios'][i]['horarioEntrada'],
+                            'horarioSalida': user_finded['horarios'][i]['horarioSalida'],
+                            'tipo': user_finded['horarios'][i]['tipo'],
+                        })
+                    evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
+                    print('Ingreso irregular por horario. Evento creado')
+
+            return jsonify({'message': 'Autenticación exitosa', 'data': user_finded}), 200
+
+        return jsonify({'message': 'Rol incorrecto'}), 401
+
     except Exception as e:
+        # If an error occurs, return a 500 HTTP status code and an error message
         mensaje_error = 'Error interno en el servidor: {}'.format(str(e))
-        return jsonify({'error': mensaje_error}), 500 
+        return jsonify({'error': mensaje_error}), 500
+
 
     
 def launch_script_automatic_log():

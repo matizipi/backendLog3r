@@ -1,10 +1,8 @@
-import os
+import time
 from bson import ObjectId
 from datetime import datetime
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from database.connection import db
+from repository.reportesRepository import notificarCambioDeTitularidad
 
 def get_users_repository():
     collection = db['usuarios']
@@ -134,7 +132,16 @@ def create_user_repository(nombre, apellido, dni, rol, horarios, email):
 
 def update_user_repository(user_id, nombre, apellido, dni, rol, horarios, email):
     collection = db['usuarios']
-    json_usuario_original = get_user_repository(user_id, with_horarios=True) #obtengo usuario antes de modificarse
+    json_usuario_original = get_user_repository(user_id, with_horarios=True)  # obtener usuario antes de modificarse
+
+    # Verificar si el nuevo DNI o correo electrónico ya existen en otros usuarios
+    usuario_existente_dni = collection.find_one({'dni': dni, '_id': {'$ne': ObjectId(user_id)}})
+    usuario_existente_email = collection.find_one({'email': email, '_id': {'$ne': ObjectId(user_id)}})
+
+    if usuario_existente_dni:
+        raise RuntimeError("El DNI ya está registrado en otro usuario")
+    if usuario_existente_email:
+        raise RuntimeError("El email ya está registrado en otro usuario")
 
     for i in range(len(horarios)):
         horarios[i] = ObjectId(horarios[i])
@@ -147,24 +154,30 @@ def update_user_repository(user_id, nombre, apellido, dni, rol, horarios, email)
             'dni': int(dni),
             'rol': rol,
             'horarios': horarios,
-            'email':email
+            'email': email
         }}
     )
+
     if result.modified_count > 0:
         json_usuario_original['horarios'] = [horario['tipo'] + " " + horario['horarioEntrada'] + "-" + horario['horarioSalida'] for horario in json_usuario_original['horarios']]
 
         json_usuario_modificado = get_user_repository(user_id, with_horarios=True)
         json_usuario_modificado['horarios'] = [horario['tipo'] + " " + horario['horarioEntrada'] + "-" + horario['horarioSalida'] for horario in json_usuario_modificado['horarios']]
 
-        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original,json_usuario_modificado)
-        normalizarDatosEnLogs(json_usuario_original,campos_modificados)
-        notificarCambioDeTitularidad(nombre,apellido,json_usuario_original,json_usuario_modificado)
-    
-    return { 'modifiedCount': result.modified_count }
+        campos_modificados = guardarHistorialUsuariosConCambios(json_usuario_original, json_usuario_modificado)
+        normalizarDatosEnLogs(json_usuario_original, campos_modificados)
+        notificarCambioDeTitularidad(nombre, apellido, json_usuario_original, json_usuario_modificado)
+
+    return {'modifiedCount': result.modified_count}
+
+
 
 def delete_user_repository(user_id):
     collection = db['usuarios']
     result = collection.delete_one({'_id': ObjectId(user_id)})
+    collectionLicencias = db['licencias']
+    filtro = {'userId': user_id}     
+    collectionLicencias.delete_many(filtro)
     return { 'deletedCount': result.deleted_count }
 
 
@@ -201,6 +214,7 @@ def guardarHistorialUsuarios(nombre, apellido, dni, rol, horarios):
             'fechaDeCambio':datetime.now(),
             'usuarioResponsable':'RRHH'
         })
+    
 def normalizarDatosEnLogs(json_usuario_original,cambios): 
     dni = json_usuario_original.get('dni')
     logs = db['logs']   
@@ -210,100 +224,7 @@ def normalizarDatosEnLogs(json_usuario_original,cambios):
     # Ejecutar la actualización
     logs.update_many(filtro, actualizacion)
 
-def notificarCambioDeTitularidad(nombre,apellido,json_usuario_original,json_usuario_modificado):
-    asunto="Notificación sobre cambio de titularidad"
-    personal_jerarquico = get_users_by_role("personal jerárquico")
-    emails = [user['email'] for user in personal_jerarquico]
-    mensaje=generar_cuerpo_cambio_titularidad(nombre, apellido, json_usuario_original,json_usuario_modificado)
-    for email in emails:
-        send_email(email, asunto, mensaje)
-
-def generar_cuerpo_cambio_titularidad(nombre, apellido, original, modificado):
-    cambios = []
-    for key in original:
-        if key in modificado and original[key] != modificado[key]:
-            cambios.append(f"{key}: {original[key]} -> {modificado[key]}")
-    
-    if not cambios:
-        return "No se han realizado modificaciones."
-    
-    cuerpo = f"Se han realizado los siguientes cambios en la información del usuario:\n\n{nombre} {apellido}\n"
-    cuerpo += "\n".join(cambios)
-    return cuerpo
-
-
-def notificarIncompatibilidadEnRegistro(nombre,apellido,dni):
-    asunto="Usuario ingresado mediante registro offline inexistente en la base de datos."
-    collection = db['usuarios']
-    personal_jerarquico = collection.find({"rol": "personal jerárquico"})
-    emails = [user['email'] for user in personal_jerarquico]
-
-    mensaje=generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni)
-
-    for email in emails:
-        send_email(email, asunto, mensaje)
-
-def generar_cuerpo_notificacion_incompatibilidad(nombre,apellido,dni):       
-    cuerpo = (
-        f"Se ha detectado una incompatibilidad con un registro offline:\n\n"
-        f"El visitante ingresado no esta registrado en la base de datos\n"
-        f"Usuario: {nombre} {apellido}\n"
-        f"DNI: {dni}\n\n"       
-        f"Log3rApp by AlphaTeam"
-    )
-    return cuerpo
-
-
-def notificarCorte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte):
-    asunto="Notificación sobre corte de Internet (Log3rApp)"
-    personal_jerarquico = get_users_by_role("personal jerárquico")
-
-    emails = [user['email'] for user in personal_jerarquico]
-
-    mensaje=generar_cuerpo_notificacion_corte(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte)
-
-    for email in emails:
-        send_email(email, asunto, mensaje)
-
-def generar_cuerpo_notificacion_corte(horarioDesconexion, horarioReconexion, cantRegSincronizados,periodoDeCorte):       
-    cuerpo = (
-        f"Se ha detectado un corte de Internet en la aplicación:\n\n"
-        f"Horario de Desconexión: {horarioDesconexion}\n"
-        f"Horario de Reconexión: {horarioReconexion}\n"
-        f"Cantidad de Registros Sincronizados: {cantRegSincronizados}\n\n"
-        f"Tiempo total sin conexión de internet: {periodoDeCorte} (horas\\minutos\\segundos) \n\n"
-        f"Log3rApp by AlphaTeam"
-    )
-    return cuerpo
-
-
-def send_email(to_email, subject, message):
-
-    smtp_server = 'smtp.office365.com'
-    smtp_port = 587
-    smtp_user = os.getenv('OUTLOOK_USER') 
-    smtp_password = os.getenv('OUTLOOK_PASSWORD') 
-    
-    # Configuración del mensaje
-    msg = MIMEMultipart()
-    msg['From'] = smtp_user
-    msg['To'] = to_email
-    msg['Subject'] = subject
-
-    # Adjuntar el cuerpo del mensaje
-    msg.attach(MIMEText(message, 'plain'))
-
-    # Conectar al servidor SMTP y enviar el correo
-    try:
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.sendmail(smtp_user, to_email, msg.as_string())
-        server.quit()
-        print(f'Correo enviado a {to_email}')
-    except Exception as e:
-        print(f'Error al enviar el correo a {to_email}: {e}')
-    
+   
 def get_last_estado_by_dni(dni):
     logs = db['logs']
     try:
@@ -322,3 +243,31 @@ def get_last_estado_by_dni(dni):
     except Exception as e:
         mensaje_error = "Error interno en el servidor: {}".format(str(e))
         return {'error': mensaje_error}, 500
+
+def chequearExistenciaDeUsuarios(registros):
+    listaIncompatibles = []
+    collection = db['usuarios']
+
+    for registro in registros:
+        try:
+            # Acceder a los valores del diccionario
+            dni = registro.get('dni')
+            nombre = registro.get('nombre')
+            apellido = registro.get('apellido')
+            
+            usuario = collection.find_one({
+                'dni': dni,
+                'nombre': nombre,
+                'apellido': apellido
+            })
+            
+            if usuario is None:
+                listaIncompatibles.append(registro)
+        except Exception as e:
+            print(f"Error al verificar el registro {registro}: {str(e)}")
+
+    return listaIncompatibles  
+
+        
+
+   
