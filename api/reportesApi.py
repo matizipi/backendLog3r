@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from repository.eventosRepository import SincronizacionOfflineEvent, post_eventos_repository
 from repository.reportesRepository import notificarInfoDeSincronizacion
 from repository.logsRepository import registrarLog
 from repository.usersRepository import chequearExistenciaDeUsuarios
@@ -15,7 +16,11 @@ def notificar_info_sincronizacion():
         horario_reconexion_str = data.get('horarioReconexion')  
         cantRegSincronizados = data.get('cantRegSincronizados')
         periodoDeCorte_str=data.get('periodoDeCorte')
-    
+        guardia = data.get('guardia')
+
+        # Validar campos requeridos
+        if not all([horario_desconexion_str, horario_reconexion_str, cantRegSincronizados, periodoDeCorte_str, guardia]):
+            return jsonify({"error": "Faltan datos obligatorios"}), 400
       
         horarioDesconexion = datetime.strptime(horario_desconexion_str, '%Y-%m-%d %H:%M:%S')
         horarioReconexion = datetime.strptime(horario_reconexion_str, '%Y-%m-%d %H:%M:%S')
@@ -35,6 +40,10 @@ def notificar_info_sincronizacion():
             resultados.append(resultado)
 
         incompatibles=chequearExistenciaDeUsuarios(registros)
+
+        event = SincronizacionOfflineEvent(datetime.now(),guardia,horarioDesconexion,horarioReconexion,cantRegSincronizados,str(periodoDeCorte),incompatibles)
+        created_event = post_eventos_repository(event)
+
         notificarInfoDeSincronizacion(horarioDesconexion,horarioReconexion,cantRegSincronizados,periodoDeCorte,incompatibles)
 
         return jsonify(resultados), 200

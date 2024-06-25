@@ -13,7 +13,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from waitress import serve
 from database.connection import client
-from repository.eventosRepository import post_eventos_repository
+from repository.eventosRepository import AutenticationFallidaEvent, HorarioEvent, LicenciaEvent, post_eventos_repository
 from repository.licenciasRepository import getUserLicenses
 
 import comparacionCaras
@@ -59,11 +59,33 @@ app.register_blueprint(horarios_bp, url_prefix = '/api/horarios')
 app.register_blueprint(eventos_bp, url_prefix = '/api/eventos')
 app.register_blueprint(reportes_bp, url_prefix= '/api/reportes')
 
+@app.route('/api/authentication/failed', methods=['POST'])
+def authentication_failed():
+    try:
+        data = request.json  # JSON payload containing the array of floats
+        embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
+        guardia = data.get('guardia')
+
+        event = AutenticationFallidaEvent(datetime.now(), guardia, embeddings)
+        created_event = post_eventos_repository(event)
+
+        print('Ingreso fallido. Evento creado')
+        return jsonify({'message': 'Evento creado con éxito'}), 200
+    
+    except RuntimeError as e:
+        return jsonify({'message': e.args[0]}), 400
+    except Exception as e:
+        # If an error occurs, return a 500 HTTP status code and an error message
+        mensaje_error = 'Error interno en el servidor: {}'.format(str(e))
+        return jsonify({'error': mensaje_error}), 500
+
+
 @app.route('/api/authentication', methods=['POST'])
 def authentication():
     try:
         data = request.json  # JSON payload containing the array of floats
         embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
+        guardia = data.get('guardia')  # Extract the array of floats from JSON payload
 
         user_finded = comparacionCaras.compararEmbeddingConDB(embeddings)
         if user_finded is None or user_finded == -1:
@@ -85,7 +107,8 @@ def authentication():
                     'fechaDesde': license['fechaDesde'],
                     'fechaHasta': license['fechaHasta'],
                 }
-                evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
+                event = LicenciaEvent(dt, active_license,user_finded, guardia)
+                created_event = post_eventos_repository(event)
                 print('Ingreso irregular por licencia. Evento creado')
                 return jsonify({'message': 'Autenticación exitosa', 'data': user_finded}),200
 
@@ -130,7 +153,9 @@ def authentication():
                     'tipo': user_finded['horarios'][i]['tipo'],
                     }
                 )
-            evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
+
+            event = HorarioEvent(dt, horarios_db,user_finded, guardia)
+            created_event = post_eventos_repository(event)
             print('Ingreso irregular por horario. Evento creado')
             
         return jsonify({'message': 'Autenticación exitosa', 'data': user_finded}),200
@@ -157,7 +182,7 @@ def horarioValido(dt_actual: datetime, horario_entrada: str, horario_salida: str
 
 
 @app.route('/api/login', methods=['POST'])
-def login2():
+def login():
     try:
         data = request.json  # JSON payload containing the array of floats
         embeddings = data.get('embeddings', [])  # Extract the array of floats from JSON payload
@@ -183,7 +208,10 @@ def login2():
                         'fechaDesde': license['fechaDesde'],
                         'fechaHasta': license['fechaHasta'],
                     }
-                    evento = post_eventos_repository(user_finded['_id'], active_license, tipo='licencia')
+
+                    event = LicenciaEvent(dt, active_license, user_finded)
+                    created_event = post_eventos_repository(event)
+
                     print('Ingreso regular por licencia. Evento creado')
                     break
 
@@ -225,7 +253,9 @@ def login2():
                             'horarioSalida': user_finded['horarios'][i]['horarioSalida'],
                             'tipo': user_finded['horarios'][i]['tipo'],
                         })
-                    evento = post_eventos_repository(user_finded['_id'], horarios_db, tipo='horario')
+
+                    event = HorarioEvent(dt, horarios_db,user_finded)
+                    created_event = post_eventos_repository(event)
                     print('Ingreso irregular por horario. Evento creado')
 
             return jsonify({'message': 'Autenticación exitosa', 'data': user_finded}), 200
